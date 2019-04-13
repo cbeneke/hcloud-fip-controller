@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const Version = "0.0.1"
+
 type Configuration struct {
 	Token   string
 	Address string
