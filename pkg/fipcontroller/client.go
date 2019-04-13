@@ -127,13 +127,17 @@ func (client *Client) publicAddress(ctx context.Context, ip net.IP) (server *hcl
 }
 
 func (client *Client) nodeAddress() (address net.IP, err error) {
+	// TODO: Make these either part of the configuration, or pass them to the client.
+	// Otherwise they are basically globals and hard to debug
 	hostname := os.Getenv("HOSTNAME")
 	namespace := os.Getenv("NAMESPACE")
+
 	pods, err := client.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		// TODO: Return an error - proverb: don't panic
 		panic(err)
 	}
+
 	var nodeName string
 	for _, pod := range pods.Items {
 		if pod.Name == hostname {
