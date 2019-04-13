@@ -106,6 +106,7 @@ func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, er
 		}
 	}
 
+	// TODO: Try to return with the address and no error
 	return nil, fmt.Errorf("IP address %s not allocated", client.Configuration.Address)
 }
 
@@ -120,6 +121,8 @@ func (client *Client) publicAddress(ctx context.Context, ip net.IP) (server *hcl
 			return server, nil
 		}
 	}
+
+	// TODO: Try to return with the address and no error
 	return nil, fmt.Errorf("no server with IP address %s found", ip.String())
 }
 
@@ -158,5 +161,7 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 			return net.ParseIP(address.Address), nil
 		}
 	}
+
+	// TODO: Try to return with the address and no error
 	return nil, fmt.Errorf("could not find address for current node")
 }
