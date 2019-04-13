@@ -20,7 +20,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if err != nil {
-		fmt.Println(fmt.Errorf("could not run client: %v", err))
+		fmt.Printf("could not run client: %v\n", err)
 		os.Exit(1)
 	}
 }
