@@ -16,7 +16,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = fipcontroller.Run(*client)
+	err = fipcontroller.Run(ctx, client)
 	if err != nil {
 		fmt.Println(fmt.Errorf("could not run client: %v", err))
 		os.Exit(1)
