@@ -15,10 +15,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = fipcontroller.Run(ctx, client)
 	// TODO: Use channel with interrupt signal that blocks until it receives to cancel the context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	err = client.Run(ctx)
 	if err != nil {
 		fmt.Printf("could not run client: %v\n", err)
 		os.Exit(1)
