@@ -61,35 +61,40 @@ func NewClient() (*Client, error) {
 	return &client, nil
 }
 
-func Run(ctx context.Context, client *Client) error {
+func (client *Client) Run(ctx context.Context) error {
 	for {
-		serverAddress, err := GetKubeNodeAddress(client)
+		nodeAddress, err := client.nodeAddress()
 		if err != nil {
-			return fmt.Errorf("could not get kubernetes server address: %v", err)
+			return fmt.Errorf("could not get kubernetes node address: %v", err)
 		}
 
-		server, err := GetServerByPublicAddress(ctx, client, serverAddress)
+		serverAddress, err := client.publicAddress(ctx, nodeAddress)
 		if err != nil {
-			return fmt.Errorf("could not get current server: %v", err)
+			return fmt.Errorf("could not get current serverAddress: %v", err)
 		}
 
-		floatingIP, err := GetFipFromClient(ctx, client)
+		floatingIP, err := client.floatingIP(ctx)
+		if err != nil {
+			return err
+		}
 
-		if server.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address %s to server %s.", floatingIP.IP.String(), server.Name)
-			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+		if serverAddress.ID != floatingIP.Server.ID {
+			fmt.Printf("Switching address %s to serverAddress %s.", floatingIP.IP.String(), serverAddress.Name)
+			// TODO: Check if FloatingIP.Assign error returns != 200 OK errors
+			// I believe you should check the returned response as the returned error only returns if http call fails
+			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, serverAddress)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP: %v", err)
 			}
 		} else {
-			fmt.Printf("Address %s already assigned to server %s. Nothing to do.", floatingIP.IP.String(), server.Name)
+			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.", floatingIP.IP.String(), serverAddress.Name)
 		}
 
 		time.Sleep(30 * time.Second)
 	}
 }
 
-func GetFipFromClient(ctx context.Context, client *Client) (ip *hcloud.FloatingIP, err error) {
+func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, err error) {
 	ips, err := client.HetznerClient.FloatingIP.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch floating IPs: %v", err)
@@ -104,7 +109,7 @@ func GetFipFromClient(ctx context.Context, client *Client) (ip *hcloud.FloatingI
 	return nil, fmt.Errorf("IP address %s not allocated", client.Configuration.Address)
 }
 
-func GetServerByPublicAddress(ctx context.Context, client *Client, ip net.IP) (server *hcloud.Server, err error) {
+func (client *Client) publicAddress(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
 	servers, err := client.HetznerClient.Server.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
@@ -118,7 +123,7 @@ func GetServerByPublicAddress(ctx context.Context, client *Client, ip net.IP) (s
 	return nil, fmt.Errorf("no server with IP address %s found", ip.String())
 }
 
-func GetKubeNodeAddress(client *Client) (address net.IP, err error) {
+func (client *Client) nodeAddress() (address net.IP, err error) {
 	hostname := os.Getenv("HOSTNAME")
 	namespace := os.Getenv("NAMESPACE")
 	pods, err := client.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
