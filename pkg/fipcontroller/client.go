@@ -127,6 +127,8 @@ func (client *Client) publicAddress(ctx context.Context, ip net.IP) (server *hcl
 }
 
 func (client *Client) nodeAddress() (address net.IP, err error) {
+	// TODO: Make these either part of the configuration, or pass them to the client.
+	// Otherwise they are basically globals and hard to debug
 	nodeName := os.Getenv("NODE_NAME")
 	nodes, err := client.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
