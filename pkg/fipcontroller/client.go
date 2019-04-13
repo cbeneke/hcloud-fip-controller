@@ -30,8 +30,6 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	client := Client{}
-
 	// Move config reading out of NewClient() and pass as struct
 	file, err := ioutil.ReadFile("config/config.json")
 	if err != nil {
@@ -43,22 +41,23 @@ func NewClient() (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not decode config: %v", err)
 	}
-	client.Configuration = config
 
-	client.HetznerClient = hcloud.NewClient(hcloud.WithToken(config.Token))
-	if err != nil {
-		return nil, fmt.Errorf("could not get floating IP: %v", err)
-	}
+	hetznerClient := hcloud.NewClient(hcloud.WithToken(config.Token))
+
 	kubeconfig, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("could not get kubeconfig: %v", err)
 	}
-	client.KubeClient, err = kubernetes.NewForConfig(kubeconfig)
+	kubeClient, err := kubernetes.NewForConfig(kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not get kubernetes client: %v", err)
 	}
 
-	return &client, nil
+	return &Client{
+		HetznerClient: hetznerClient,
+		KubeClient:    kubeClient,
+		Configuration: config,
+	}, nil
 }
 
 func (client *Client) Run(ctx context.Context) error {
