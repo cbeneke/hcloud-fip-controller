@@ -1,4 +1,4 @@
-package main
+package hcloud_fip_controller
 
 import (
 	"context"
@@ -9,8 +9,10 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	client, err := fipcontroller.NewClient(ctx)
+	ctx, ctxDone := context.WithCancel(context.Background())
+	defer ctxDone()
+
+	client, err := fipcontroller.NewClient()
 	if err != nil {
 		fmt.Println(fmt.Errorf("could not initialise client: %v", err))
 		os.Exit(1)

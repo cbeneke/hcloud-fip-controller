@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 	"net"
 	"os"
+	"time"
 )
 
 type Configuration struct {
@@ -21,11 +22,10 @@ type Configuration struct {
 type Client struct {
 	HetznerClient *hcloud.Client
 	KubeClient    *kubernetes.Clientset
-	FloatingIP    *hcloud.FloatingIP
 	Configuration Configuration
 }
 
-func NewClient(ctx context.Context) (*Client, error) {
+func NewClient() (*Client, error) {
 	client := Client{}
 
 	config := Configuration{}
@@ -42,7 +42,6 @@ func NewClient(ctx context.Context) (*Client, error) {
 	client.Configuration = config
 
 	client.HetznerClient = hcloud.NewClient(hcloud.WithToken(config.Token))
-	client.FloatingIP, err = GetFipFromClient(ctx, &client)
 	if err != nil {
 		return nil, fmt.Errorf("could not get floating IP: %v", err)
 	}
@@ -59,27 +58,31 @@ func NewClient(ctx context.Context) (*Client, error) {
 }
 
 func Run(ctx context.Context, client *Client) error {
-	serverAddress, err := GetKubeNodeAddress(client)
-	if err != nil {
-		return fmt.Errorf("could not get kubernetes server address: %v", err)
-	}
-
-	server, err := GetServerByPublicAddress(ctx, client, serverAddress)
-	if err != nil {
-		return fmt.Errorf("could not get current server: %v", err)
-	}
-
-	if server.ID != client.FloatingIP.Server.ID {
-		fmt.Printf("Switching address %s to server %s.", client.FloatingIP.IP.String(), server.Name)
-		_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, client.FloatingIP, server)
+	for {
+		serverAddress, err := GetKubeNodeAddress(client)
 		if err != nil {
-			return fmt.Errorf("could not update floating IP: %v", err)
+			return fmt.Errorf("could not get kubernetes server address: %v", err)
 		}
-	} else {
-		fmt.Printf("Address %s already assigned to server %s. Nothing to do.", client.FloatingIP.IP.String(), server.Name)
-	}
 
-	return nil
+		server, err := GetServerByPublicAddress(ctx, client, serverAddress)
+		if err != nil {
+			return fmt.Errorf("could not get current server: %v", err)
+		}
+
+		floatingIP, err := GetFipFromClient(ctx, client)
+
+		if server.ID != floatingIP.Server.ID {
+			fmt.Printf("Switching address %s to server %s.", floatingIP.IP.String(), server.Name)
+			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			if err != nil {
+				return fmt.Errorf("could not update floating IP: %v", err)
+			}
+		} else {
+			fmt.Printf("Address %s already assigned to server %s. Nothing to do.", floatingIP.IP.String(), server.Name)
+		}
+
+		time.Sleep(30 * time.Second)
+	}
 }
 
 func GetFipFromClient(ctx context.Context, client *Client) (ip *hcloud.FloatingIP, err error) {
