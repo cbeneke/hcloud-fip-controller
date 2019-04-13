@@ -8,8 +8,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflag
 
 FROM alpine:latest
 RUN adduser -S -D -H -h /app user
+COPY --from=builder /build/main /app/fip-controller
+RUN chmod +x /app/fip-controller && chown user: /app/fip-controller
 USER user
-COPY --from=builder /build/main /app/
-WORKDIR /app
-RUN chmod +x ./main
-CMD ["./main"]
+CMD ["/app/fip-controller"]
