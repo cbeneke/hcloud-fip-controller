@@ -128,6 +128,7 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
+
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
 		if node.Name == nodeName {
