@@ -127,6 +127,7 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 	namespace := os.Getenv("NAMESPACE")
 	pods, err := client.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
+		// TODO: Return an error - proverb: don't panic
 		panic(err)
 	}
 	var nodeName string
@@ -139,8 +140,10 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 
 	nodes, err := client.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
+		// TODO: Return an error - proverb: don't panic
 		panic(err)
 	}
+
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
 		if node.Name == nodeName {
