@@ -11,4 +11,5 @@ RUN adduser -S -D -H -h /app user
 USER user
 COPY --from=builder /build/main /app/
 WORKDIR /app
+RUN chmod +x ./main
 CMD ["./main"]
