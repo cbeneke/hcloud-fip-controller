@@ -32,14 +32,14 @@ type Client struct {
 func NewClient() (*Client, error) {
 	client := Client{}
 
-	config := Configuration{}
-	file, err := os.Open("config/config.json")
+	// Move config reading out of NewClient() and pass as struct
+	file, err := ioutil.ReadFile("config/config.json")
 	if err != nil {
 		return nil, fmt.Errorf("could not open config file: %v", err)
 	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&config)
+
+	var config Configuration
+	err = json.Unmarshal(file, &config)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode config: %v", err)
 	}
