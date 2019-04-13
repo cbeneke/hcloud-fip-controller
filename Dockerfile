@@ -1,8 +1,14 @@
-FROM golang:latest
-WORKDIR /go/src/github.com/cbeneke/hcloud-fip-controller
-RUN go get -v github.com/cbeneke/hcloud-fip-controller
+FROM golang:alpine as builder
+RUN mkdir /build && \
+  apk add git && \
+  go get -u -v -d github.com/cbeneke/hcloud-fip-controller
+ADD . /build/
+WORKDIR /build
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o main .
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates && mkdir /app
-COPY --from=0 /go/src/github.com/cbeneke/hcloud-fip-controller/hcloud-fip-controller /app/
-CMD ["/app/hcloud-fip-controller"]
+RUN adduser -S -D -H -h /app user
+USER user
+COPY --from=builder /build/main /app/
+WORKDIR /app
+CMD ["./main"]
