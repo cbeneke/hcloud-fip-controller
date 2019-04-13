@@ -13,3 +13,6 @@
 
 # IDEs
 .idea/
+
+# config files
+config/config.json
