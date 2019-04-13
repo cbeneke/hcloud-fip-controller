@@ -61,6 +61,7 @@ func NewClient() (*Client, error) {
 }
 
 func (client *Client) Run(ctx context.Context) error {
+	// TODO: Passing ctx is already great, next you could do a select{} with ctx.Done to gracefully shutdown
 	for {
 		nodeAddress, err := client.nodeAddress()
 		if err != nil {
