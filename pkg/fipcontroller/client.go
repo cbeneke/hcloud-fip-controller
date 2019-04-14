@@ -104,7 +104,10 @@ func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, er
 	}
 
 	for _, ip := range ips {
-		if ip.IP.Equal(net.ParseIP(client.Configuration.Address)) {
+		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(client.Configuration.Address)) {
+			return ip, nil
+		}
+		if ip.Type == hcloud.FloatingIPTypeIPv6 && ip.Network.Contains(net.ParseIP(client.Configuration.Address)) {
 			return ip, nil
 		}
 	}
