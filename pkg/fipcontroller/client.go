@@ -31,7 +31,7 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	// Move config reading out of NewClient() and pass as struct
+	// TODO: Move config reading out of NewClient() and pass as struct
 	file, err := ioutil.ReadFile("config/config.json")
 	if err != nil {
 		return nil, fmt.Errorf("could not open config file: %v", err)
@@ -82,14 +82,14 @@ func (client *Client) Run(ctx context.Context) error {
 
 		if server.ID != floatingIP.Server.ID {
 			fmt.Printf("Switching address %s to serverAddress %s.\n", floatingIP.IP.String(), server.Name)
-			// TODO: Check if FloatingIP.Assign error returns != 200 OK errors
-			// I believe you should check the returned response as the returned error only returns if http call fails
-			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			_, response, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP: %v", err)
 			}
+			if response.StatusCode != 200 {
+				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 200", response.StatusCode)
+			}
 		} else {
-
 			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 		}
 
