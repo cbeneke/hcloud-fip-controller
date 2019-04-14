@@ -27,6 +27,7 @@ type Client struct {
 	HetznerClient *hcloud.Client
 	KubeClient    *kubernetes.Clientset
 	Configuration Configuration
+	NodeName      string
 }
 
 func NewClient() (*Client, error) {
@@ -57,6 +58,7 @@ func NewClient() (*Client, error) {
 		HetznerClient: hetznerClient,
 		KubeClient:    kubeClient,
 		Configuration: config,
+		NodeName:      os.Getenv("NODE_NAME"),
 	}, nil
 }
 
@@ -131,9 +133,6 @@ func (client *Client) server(ctx context.Context, ip net.IP) (server *hcloud.Ser
 }
 
 func (client *Client) nodeAddress() (address net.IP, err error) {
-	// TODO: Make these either part of the configuration, or pass them to the client.
-	// Otherwise they are basically globals and hard to debug
-	nodeName := os.Getenv("NODE_NAME")
 	nodes, err := client.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
@@ -141,7 +140,7 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
-		if node.Name == nodeName {
+		if node.Name == client.NodeName {
 			addresses = node.Status.Addresses
 			break
 		}
