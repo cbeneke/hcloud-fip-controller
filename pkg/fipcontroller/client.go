@@ -86,8 +86,8 @@ func (client *Client) Run(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("could not update floating IP: %v", err)
 			}
-			if response.StatusCode != 200 {
-				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 200", response.StatusCode)
+			if response.StatusCode != 201 {
+				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
 			}
 		} else {
 			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.\n", floatingIP.IP.String(), server.Name)
