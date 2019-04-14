@@ -68,7 +68,7 @@ func (client *Client) Run(ctx context.Context) error {
 			return fmt.Errorf("could not get kubernetes node address: %v", err)
 		}
 
-		serverAddress, err := client.publicAddress(ctx, nodeAddress)
+		server, err := client.server(ctx, nodeAddress)
 		if err != nil {
 			return fmt.Errorf("could not get current serverAddress: %v", err)
 		}
@@ -78,16 +78,16 @@ func (client *Client) Run(ctx context.Context) error {
 			return err
 		}
 
-		if serverAddress.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address %s to serverAddress %s.", floatingIP.IP.String(), serverAddress.Name)
+		if server.ID != floatingIP.Server.ID {
+			fmt.Printf("Switching address %s to serverAddress %s.", floatingIP.IP.String(), server.Name)
 			// TODO: Check if FloatingIP.Assign error returns != 200 OK errors
 			// I believe you should check the returned response as the returned error only returns if http call fails
-			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, serverAddress)
+			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP: %v", err)
 			}
 		} else {
-			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.", floatingIP.IP.String(), serverAddress.Name)
+			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.", floatingIP.IP.String(), server.Name)
 		}
 
 		time.Sleep(30 * time.Second)
@@ -110,7 +110,7 @@ func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, er
 	return nil, fmt.Errorf("IP address %s not allocated", client.Configuration.Address)
 }
 
-func (client *Client) publicAddress(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
+func (client *Client) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
 	servers, err := client.HetznerClient.Server.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
@@ -144,6 +144,7 @@ func (client *Client) nodeAddress() (address net.IP, err error) {
 	}
 
 	for _, address := range addresses {
+		// TODO: Make address.Type configurable
 		if address.Type == corev1.NodeInternalIP {
 			return net.ParseIP(address.Address), nil
 		}
