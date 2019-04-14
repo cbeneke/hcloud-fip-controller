@@ -81,7 +81,7 @@ func (client *Client) Run(ctx context.Context) error {
 		}
 
 		if server.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address %s to serverAddress %s.\n", floatingIP.IP.String(), server.Name)
+			fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
 			_, response, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP: %v", err)
@@ -90,7 +90,7 @@ func (client *Client) Run(ctx context.Context) error {
 				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
 			}
 		} else {
-			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.\n", floatingIP.IP.String(), server.Name)
+			fmt.Printf("Address %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 		}
 
 		time.Sleep(30 * time.Second)
