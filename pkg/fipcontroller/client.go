@@ -115,23 +115,10 @@ func GetServerByPublicAddress(ctx context.Context, client *Client, ip net.IP) (s
 }
 
 func GetKubeNodeAddress(client *Client) (address net.IP, err error) {
-	hostname := os.Getenv("HOSTNAME")
-	namespace := os.Getenv("NAMESPACE")
-	pods, err := client.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-	var nodeName string
-	for _, pod := range pods.Items {
-		if pod.Name == hostname {
-			nodeName = pod.Spec.NodeName
-			break
-		}
-	}
-
+	nodeName := os.Getenv("NODE_NAME")
 	nodes, err := client.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
@@ -142,7 +129,7 @@ func GetKubeNodeAddress(client *Client) (address net.IP, err error) {
 	}
 
 	for _, address := range addresses {
-		if address.Type == corev1.NodeExternalIP {
+		if address.Type == corev1.NodeInternalIP {
 			return net.ParseIP(address.Address), nil
 		}
 	}
