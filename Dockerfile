@@ -7,7 +7,8 @@ ADD . ${GOPATH}/src/github.com/cbeneke/hcloud-fip-controller
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' github.com/cbeneke/hcloud-fip-controller
 
 FROM alpine:latest
-RUN adduser -S -D -H -h /app runuser
+RUN adduser -S -D -H -h /app runuser && \
+  apk add ca-certificates
 WORKDIR /app
 USER runuser
 COPY --from=builder /out/hcloud-fip-controller /app/fip-controller
