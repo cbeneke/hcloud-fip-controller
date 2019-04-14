@@ -1,4 +1,4 @@
-package hcloud_fip_controller
+package main
 
 import (
 	"context"
