@@ -78,9 +78,8 @@ func (client *Client) Run(ctx context.Context) error {
 			return err
 		}
 
-
 		if server.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address %s to serverAddress %s.", floatingIP.IP.String(), server.Name)
+			fmt.Printf("Switching address %s to serverAddress %s.\n", floatingIP.IP.String(), server.Name)
 			// TODO: Check if FloatingIP.Assign error returns != 200 OK errors
 			// I believe you should check the returned response as the returned error only returns if http call fails
 			_, _, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
@@ -89,7 +88,7 @@ func (client *Client) Run(ctx context.Context) error {
 			}
 		} else {
 
-			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.", floatingIP.IP.String(), server.Name)
+			fmt.Printf("Address %s already assigned to serverAddress %s. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 		}
 
 		time.Sleep(30 * time.Second)
@@ -112,7 +111,6 @@ func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, er
 	return nil, fmt.Errorf("IP address %s not allocated", client.Configuration.Address)
 }
 
-
 func (client *Client) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
 	servers, err := client.HetznerClient.Server.All(ctx)
 	if err != nil {
@@ -121,6 +119,9 @@ func (client *Client) server(ctx context.Context, ip net.IP) (server *hcloud.Ser
 
 	for _, server := range servers {
 		if server.PublicNet.IPv4.IP.Equal(ip) {
+			return server, nil
+		}
+		if server.PublicNet.IPv6.IP.Equal(ip) {
 			return server, nil
 		}
 	}
@@ -132,7 +133,6 @@ func (client *Client) server(ctx context.Context, ip net.IP) (server *hcloud.Ser
 func (client *Client) nodeAddress() (address net.IP, err error) {
 	// TODO: Make these either part of the configuration, or pass them to the client.
 	// Otherwise they are basically globals and hard to debug
-
 	nodeName := os.Getenv("NODE_NAME")
 	nodes, err := client.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
