@@ -65,13 +65,13 @@ func NewClient() (*Client, error) {
 func (client *Client) Run(ctx context.Context) error {
 	for {
 		select {
+		case <-ctx.Done():
+			return nil
 		case <-time.After(30 * time.Second):
 			err := client.UpdateFloatingIPs(ctx)
 			if err != nil {
 				return err
 			}
-		case <-ctx.Done():
-			return nil
 		}
 	}
 }
