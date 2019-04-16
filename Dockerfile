@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflag
 
 FROM alpine:latest
 RUN adduser -S -D -H -h /app runuser && \
-  apk add ca-certificates
+  apk add --no-cache ca-certificates
 WORKDIR /app
 USER runuser
 COPY --from=builder /out/hcloud-fip-controller /app/fip-controller
