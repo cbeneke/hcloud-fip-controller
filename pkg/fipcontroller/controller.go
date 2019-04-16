@@ -26,7 +26,6 @@ type Controller struct {
 }
 
 func NewController(config *Configuration) (*Controller, error) {
-
 	hetznerClient, err := hetznerClient(config.HetznerAPIToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
@@ -46,7 +45,6 @@ func NewController(config *Configuration) (*Controller, error) {
 }
 
 func ParseConfig() (*Configuration, error) {
-
 	var config Configuration
 
 	file, err := ioutil.ReadFile("config/config.json")

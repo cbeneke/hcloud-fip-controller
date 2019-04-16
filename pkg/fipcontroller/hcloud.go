@@ -36,10 +36,7 @@ func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hc
 	}
 
 	for _, server := range servers {
-		if server.PublicNet.IPv4.IP.Equal(ip) {
-			return server, nil
-		}
-		if server.PublicNet.IPv6.IP.Equal(ip) {
+		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
 			return server, nil
 		}
 	}
