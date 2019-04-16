@@ -9,9 +9,15 @@ import (
 )
 
 func main() {
-	client, err := fipcontroller.NewClient()
+	controllerConfig, err := fipcontroller.ParseConfig()
 	if err != nil {
-		fmt.Println(fmt.Errorf("could not initialise client: %v", err))
+		fmt.Println(fmt.Errorf("could not parse controllerConfig: %v", err))
+		os.Exit(1)
+	}
+
+	controller, err := fipcontroller.NewController(controllerConfig)
+	if err != nil {
+		fmt.Println(fmt.Errorf("could not initialise controller: %v", err))
 		os.Exit(1)
 	}
 
@@ -19,9 +25,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = client.Run(ctx)
+	err = controller.Run(ctx)
 	if err != nil {
-		fmt.Printf("could not run client: %v\n", err)
+		fmt.Printf("could not run controller: %v\n", err)
 		os.Exit(1)
 	}
 }
