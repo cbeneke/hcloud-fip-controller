@@ -7,6 +7,11 @@ import (
 	"net"
 )
 
+func hetznerClient(token string) (*hcloud.Client, error) {
+	hetznerClient := hcloud.NewClient(hcloud.WithToken(token))
+	return hetznerClient, nil
+}
+
 func (controller *Controller) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, err error) {
 	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
 	if err != nil {
@@ -14,14 +19,14 @@ func (controller *Controller) floatingIP(ctx context.Context) (ip *hcloud.Floati
 	}
 
 	for _, ip := range ips {
-		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(controller.Configuration.Address)) {
+		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(controller.Configuration.FloatingIPAddress)) {
 			return ip, nil
 		}
-		if ip.Type == hcloud.FloatingIPTypeIPv6 && ip.Network.Contains(net.ParseIP(controller.Configuration.Address)) {
+		if ip.Type == hcloud.FloatingIPTypeIPv6 && ip.Network.Contains(net.ParseIP(controller.Configuration.FloatingIPAddress)) {
 			return ip, nil
 		}
 	}
-	return nil, fmt.Errorf("IP address %s not allocated", controller.Configuration.Address)
+	return nil, fmt.Errorf("IP address %s not allocated", controller.Configuration.FloatingIPAddress)
 }
 
 func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {

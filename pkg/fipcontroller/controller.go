@@ -11,12 +11,11 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type Configuration struct {
-	Token   string
-	Address string
+	HetznerAPIToken   string
+	FloatingIPAddress string
 }
 
 type Controller struct {
@@ -28,16 +27,14 @@ type Controller struct {
 
 func NewController(config *Configuration) (*Controller, error) {
 
-	hetznerClient := hcloud.NewClient(hcloud.WithToken(config.Token))
-
-	kubeconfig, err := rest.InClusterConfig()
+	hetznerClient, err := hetznerClient(config.HetznerAPIToken)
 	if err != nil {
-		return nil, fmt.Errorf("could not get kubeconfig: %v", err)
+		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
 	}
 
-	kubernetesClient, err := kubernetes.NewForConfig(kubeconfig)
+	kubernetesClient, err := kubernetesClient()
 	if err != nil {
-		return nil, fmt.Errorf("could not get kubernetes client: %v", err)
+		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
 	}
 
 	return &Controller{
@@ -93,7 +90,7 @@ func (controller *Controller) Run(ctx context.Context) error {
 				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
 			}
 		} else {
-			fmt.Printf("Address %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
+			fmt.Printf("FloatingIPAddress %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 		}
 
 		time.Sleep(30 * time.Second)
