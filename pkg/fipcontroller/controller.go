@@ -78,7 +78,7 @@ func (controller *Controller) Run(ctx context.Context) error {
 			return err
 		}
 
-		if server.ID != floatingIP.Server.ID {
+		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
 			fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
 			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
