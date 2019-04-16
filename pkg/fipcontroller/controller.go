@@ -89,8 +89,6 @@ func (controller *Controller) Run(ctx context.Context) error {
 			if response.StatusCode != 201 {
 				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
 			}
-		} else {
-			fmt.Printf("FloatingIPAddress %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 		}
 
 		time.Sleep(30 * time.Second)
