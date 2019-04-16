@@ -66,37 +66,46 @@ func (client *Client) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(30 * time.Second):
-			nodeAddress, err := client.nodeAddress()
-			if err != nil {
-				return fmt.Errorf("could not get kubernetes node address: %v", err)
-			}
-
-			server, err := client.server(ctx, nodeAddress)
-			if err != nil {
-				return fmt.Errorf("could not get current serverAddress: %v", err)
-			}
-
-			floatingIP, err := client.floatingIP(ctx)
+			err := client.UpdateFloatingIPs(ctx)
 			if err != nil {
 				return err
-			}
-
-			if server.ID != floatingIP.Server.ID {
-				fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
-				_, response, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
-				if err != nil {
-					return fmt.Errorf("could not update floating IP: %v", err)
-				}
-				if response.StatusCode != 201 {
-					return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
-				}
-			} else {
-				fmt.Printf("Address %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
 			}
 		case <-ctx.Done():
 			return nil
 		}
 	}
+}
+
+func (client *Client) UpdateFloatingIPs(ctx context.Context) error {
+	nodeAddress, err := client.nodeAddress()
+	if err != nil {
+		return fmt.Errorf("could not get kubernetes node address: %v", err)
+	}
+
+	server, err := client.server(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("could not get current serverAddress: %v", err)
+	}
+
+	floatingIP, err := client.floatingIP(ctx)
+	if err != nil {
+		return err
+	}
+
+	if server.ID != floatingIP.Server.ID {
+		fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+		_, response, err := client.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+		if err != nil {
+			return fmt.Errorf("could not update floating IP: %v", err)
+		}
+		if response.StatusCode != 201 {
+			return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
+		}
+	} else {
+		fmt.Printf("Address %s already assigned to server '%s'. Nothing to do.\n", floatingIP.IP.String(), server.Name)
+	}
+
+	return nil
 }
 
 func (client *Client) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, err error) {
