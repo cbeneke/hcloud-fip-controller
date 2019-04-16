@@ -61,34 +61,44 @@ func ParseConfig() (*Configuration, error) {
 }
 
 func (controller *Controller) Run(ctx context.Context) error {
-	// TODO: use select{} with ctx.Done to gracefully shutdown
 	for {
-		nodeAddress, err := controller.nodeAddress()
-		if err != nil {
-			return fmt.Errorf("could not get kubernetes node address: %v", err)
-		}
-
-		server, err := controller.server(ctx, nodeAddress)
-		if err != nil {
-			return fmt.Errorf("could not get current serverAddress: %v", err)
-		}
-
-		floatingIP, err := controller.floatingIP(ctx)
-		if err != nil {
-			return err
-		}
-
-		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
-			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(30 * time.Second):
+			err := controller.UpdateFloatingIPs(ctx)
 			if err != nil {
-				return fmt.Errorf("could not update floating IP: %v", err)
-			}
-			if response.StatusCode != 201 {
-				return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
+				return err
 			}
 		}
-
-		time.Sleep(30 * time.Second)
 	}
+}
+
+func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
+	nodeAddress, err := controller.nodeAddress()
+	if err != nil {
+		return fmt.Errorf("could not get kubernetes node address: %v", err)
+	}
+
+	server, err := controller.server(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("could not get current serverAddress: %v", err)
+	}
+
+	floatingIP, err := controller.floatingIP(ctx)
+	if err != nil {
+		return err
+	}
+
+	if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
+		fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+		_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+		if err != nil {
+			return fmt.Errorf("could not update floating IP: %v", err)
+		}
+		if response.StatusCode != 201 {
+			return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
+		}
+	}
+	return nil
 }
