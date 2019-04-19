@@ -38,9 +38,14 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 		}
 	}
 
+	checkAddressType := corev1.NodeExternalIP
+	if controller.Configuration.NodeAddressType == "internal" {
+		checkAddressType = corev1.NodeInternalIP
+	}
+
 	for _, address := range addresses {
 		// TODO: Make address type configurable
-		if address.Type == corev1.NodeInternalIP {
+		if address.Type == checkAddressType {
 			return net.ParseIP(address.Address), nil
 		}
 	}

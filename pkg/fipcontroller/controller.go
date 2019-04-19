@@ -16,6 +16,7 @@ import (
 type Configuration struct {
 	HetznerAPIToken   string
 	FloatingIPAddress string
+	NodeAddressType   string
 }
 
 type Controller struct {
@@ -55,6 +56,10 @@ func ParseConfig() (*Configuration, error) {
 	err = json.Unmarshal(file, &config)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode config: %v", err)
+	}
+
+	if config.NodeAddressType != "" {
+		config.NodeAddressType = "internal"
 	}
 
 	return &config, nil

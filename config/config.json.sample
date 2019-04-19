@@ -1,4 +1,4 @@
 {
-  "token": "HetznerAPITokenString",
-  "address": "1.2.3.4"
+  "hetznerAPIToken": "HetznerAPITokenString",
+  "floatingIPAddress": "1.2.3.4"
 }
