@@ -45,7 +45,7 @@ func NewController(config *Configuration) (*Controller, error) {
 	}, nil
 }
 
-func ParseConfig() (*Configuration, error) {
+func NewControllerConfiguration() (*Configuration, error) {
 	var config Configuration
 
 	file, err := ioutil.ReadFile("config/config.json")
@@ -58,8 +58,27 @@ func ParseConfig() (*Configuration, error) {
 		return nil, fmt.Errorf("could not decode config: %v", err)
 	}
 
-	if config.NodeAddressType != "" {
+	if config.HetznerAPIToken == "" {
+		token := os.Getenv("HETZNER_API_TOKEN")
+		if token == "" {
+			return nil, fmt.Errorf("hetzner API token required but not configured")
+		}
+		config.HetznerAPIToken = token
+	}
+
+	if config.FloatingIPAddress == "" {
+		return nil, fmt.Errorf("floating IP required but not configured")
+	}
+
+	switch config.NodeAddressType {
+	case "":
+		config.NodeAddressType = "external"
+	case "external":
+		config.NodeAddressType = "external"
+	case "internal":
 		config.NodeAddressType = "internal"
+	default:
+		return nil, fmt.Errorf("nodeAddressType configured with '%s' but only '', 'external' or 'internal' allowed", config.NodeAddressType)
 	}
 
 	return &config, nil

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	controllerConfig, err := fipcontroller.ParseConfig()
+	controllerConfig, err := fipcontroller.NewControllerConfiguration()
 	if err != nil {
 		fmt.Println(fmt.Errorf("could not parse controllerConfig: %v", err))
 		os.Exit(1)
