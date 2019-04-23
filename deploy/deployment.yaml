@@ -1,0 +1,46 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fip-controller
+  namespace: fip-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fip-controller
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: fip-controller
+    spec:
+      containers:
+      - name: fip-controller
+        image: cbeneke/hcloud-fip-controller:v0.0.2
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: HETZNER_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hcloud
+              key: token
+      serviceAccountName: fip-controller
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: config
+            path: config.json
+          name: fip-controller-config
+        name: config
