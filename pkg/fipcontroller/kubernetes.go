@@ -44,10 +44,9 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 	}
 
 	for _, address := range addresses {
-		// TODO: Make address type configurable
 		if address.Type == checkAddressType {
 			return net.ParseIP(address.Address), nil
 		}
 	}
-	return nil, fmt.Errorf("could not find address for current node")
+	return nil, fmt.Errorf("could not find address for node %s", controller.NodeName)
 }
