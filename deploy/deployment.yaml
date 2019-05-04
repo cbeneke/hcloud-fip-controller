@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: fip-controller
-        image: cbeneke/hcloud-fip-controller:v0.0.2
+        image: cbeneke/hcloud-fip-controller:v0.0.3
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: config
