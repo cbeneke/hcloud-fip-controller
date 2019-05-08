@@ -10,13 +10,13 @@ kind: ClusterRole
 metadata:
   name: fip-controller
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28,6 +28,6 @@ roleRef:
   kind: ClusterRole
   name: fip-controller
 subjects:
-- kind: ServiceAccount
-  name: fip-controller
-  namespace: fip-controller
+  - kind: ServiceAccount
+    name: fip-controller
+    namespace: fip-controller

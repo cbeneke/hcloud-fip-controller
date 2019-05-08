@@ -32,7 +32,7 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
-		if node.Name == controller.NodeName {
+		if node.Name == controller.Configuration.NodeName {
 			addresses = node.Status.Addresses
 			break
 		}
@@ -48,5 +48,5 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 			return net.ParseIP(address.Address), nil
 		}
 	}
-	return nil, fmt.Errorf("could not find address for node %s", controller.NodeName)
+	return nil, fmt.Errorf("could not find address for node %s", controller.Configuration.NodeName)
 }

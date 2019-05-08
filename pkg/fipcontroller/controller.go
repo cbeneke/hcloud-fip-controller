@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -17,19 +18,19 @@ type Configuration struct {
 	HetznerAPIToken   string
 	FloatingIPAddress string
 	NodeAddressType   string
+	NodeName          string
 }
 
 type Controller struct {
 	HetznerClient    *hcloud.Client
 	KubernetesClient *kubernetes.Clientset
 	Configuration    *Configuration
-	NodeName         string
 }
 
 func NewController(config *Configuration) (*Controller, error) {
 	hetznerClient, err := hetznerClient(config.HetznerAPIToken)
 	if err != nil {
-		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
+		return nil, fmt.Errorf("could not initialise hetzner client: %v", err)
 	}
 
 	kubernetesClient, err := kubernetesClient()
@@ -41,77 +42,87 @@ func NewController(config *Configuration) (*Controller, error) {
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
-		NodeName:         os.Getenv("NODE_NAME"),
 	}, nil
 }
 
 func NewControllerConfiguration() (*Configuration, error) {
 	var config Configuration
 
+	// Read config from file if present
 	file, err := ioutil.ReadFile("config/config.json")
-	if err != nil {
-		return nil, fmt.Errorf("could not open config file: %v", err)
+	if err == nil {
+		err = json.Unmarshal(file, &config)
+		if err != nil {
+			return nil, fmt.Errorf("could not decode config: %v", err)
+		}
 	}
 
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode config: %v", err)
+	// overwrite existing configs from ENV vars if present
+	if apiToken := os.Getenv("HETZNER_CLOUD_API_TOKEN"); apiToken != "" {
+		config.HetznerAPIToken = apiToken
 	}
+	if floatingIP := os.Getenv("HETZNER_CLOUD_FLOATING_IP"); floatingIP != "" {
+		config.FloatingIPAddress = floatingIP
+	}
+	if nodeName := os.Getenv("KUBERNETES_NODE_NAME"); nodeName != "" {
+		config.NodeName = nodeName
+	}
+	if nodeAddressType := os.Getenv("KUBERNETES_NODE_ADDRESS_TYPE"); nodeAddressType != "" {
+		config.NodeAddressType = nodeAddressType
+	}
+
+	// Use defaults for unset optional configs
+	if config.NodeAddressType == "" {
+		config.NodeAddressType = "external"
+	}
+
+	// Validate required configs
+	var errs []string
 
 	if config.HetznerAPIToken == "" {
-		token := os.Getenv("HETZNER_API_TOKEN")
-		if token == "" {
-			return nil, fmt.Errorf("hetzner API token required but not configured")
-		}
-		config.HetznerAPIToken = token
+		errs = append(errs, "hetzner cloud API token required but not configured")
 	}
-
 	if config.FloatingIPAddress == "" {
-		return nil, fmt.Errorf("floating IP required but not configured")
+		errs = append(errs, "hetzner floating IP required but not configured")
 	}
-
-	switch config.NodeAddressType {
-	case "":
-		config.NodeAddressType = "external"
-	case "external":
-		config.NodeAddressType = "external"
-	case "internal":
-		config.NodeAddressType = "internal"
-	default:
-		return nil, fmt.Errorf("nodeAddressType configured with '%s' but only '', 'external' or 'internal' allowed", config.NodeAddressType)
+	if config.NodeName == "" {
+		errs = append(errs, "kubernetes node name required but not configured")
+	}
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("controller configuration invalid: %s", strings.Join(errs, ","))
 	}
 
 	return &config, nil
 }
 
 func (controller *Controller) Run(ctx context.Context) error {
+	if err := controller.UpdateFloatingIP(ctx); err != nil {
+		return err
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(30 * time.Second):
-			err := controller.UpdateFloatingIPs(ctx)
-			if err != nil {
+			if err := controller.UpdateFloatingIP(ctx); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
+func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
 	nodeAddress, err := controller.nodeAddress()
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
 	}
-
 	server, err := controller.server(ctx, nodeAddress)
 	if err != nil {
-		return fmt.Errorf("could not get current serverAddress: %v", err)
+		return fmt.Errorf("could not get configured server: %v", err)
 	}
-
 	floatingIP, err := controller.floatingIP(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get configured floating IP: %v", err)
 	}
 
 	if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
@@ -124,5 +135,6 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
 		}
 	}
+
 	return nil
 }
