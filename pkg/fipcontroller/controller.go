@@ -24,7 +24,6 @@ type Configuration struct {
 type Controller struct {
 	HetznerClient    *hcloud.Client
 	KubernetesClient *kubernetes.Clientset
-	Configuration    *Configuration
 }
 
 func NewController(config *Configuration) (*Controller, error) {
@@ -41,7 +40,6 @@ func NewController(config *Configuration) (*Controller, error) {
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
-		Configuration:    config,
 	}, nil
 }
 
@@ -98,8 +96,8 @@ func NewControllerConfiguration() (*Configuration, error) {
 	return &config, nil
 }
 
-func (controller *Controller) Run(ctx context.Context) error {
-	if err := controller.UpdateFloatingIP(ctx); err != nil {
+func (controller *Controller) Run(ctx context.Context, config *Configuration) error {
+	if err := controller.UpdateFloatingIP(ctx, config); err != nil {
 		return err
 	}
 	for {
@@ -107,15 +105,15 @@ func (controller *Controller) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(30 * time.Second):
-			if err := controller.UpdateFloatingIP(ctx); err != nil {
+			if err := controller.UpdateFloatingIP(ctx, config); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
-	nodeAddress, err := controller.nodeAddress()
+func (controller *Controller) UpdateFloatingIP(ctx context.Context, config *Configuration) error {
+	nodeAddress, err := controller.nodeAddress(config.NodeName, config.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
 	}
@@ -123,7 +121,7 @@ func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not get configured server: %v", err)
 	}
-	floatingIP, err := controller.floatingIP(ctx)
+	floatingIP, err := controller.floatingIP(ctx, config.FloatingIPAddress)
 	if err != nil {
 		return fmt.Errorf("could not get configured floating IP: %v", err)
 	}

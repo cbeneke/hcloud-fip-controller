@@ -11,12 +11,12 @@ import (
 )
 
 func kubernetesClient() (*kubernetes.Clientset, error) {
-	kubeconfig, err := rest.InClusterConfig()
+	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("could not get kubeconfig: %v", err)
 	}
 
-	kubernetesClient, err := kubernetes.NewForConfig(kubeconfig)
+	kubernetesClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not get kubernetes client: %v", err)
 	}
@@ -24,7 +24,7 @@ func kubernetesClient() (*kubernetes.Clientset, error) {
 	return kubernetesClient, nil
 }
 
-func (controller *Controller) nodeAddress() (address net.IP, err error) {
+func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (address net.IP, err error) {
 	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
@@ -32,14 +32,14 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
-		if node.Name == controller.Configuration.NodeName {
+		if node.Name == nodeName {
 			addresses = node.Status.Addresses
 			break
 		}
 	}
 
 	checkAddressType := corev1.NodeExternalIP
-	if controller.Configuration.NodeAddressType == "internal" {
+	if nodeAddressType == "internal" {
 		checkAddressType = corev1.NodeInternalIP
 	}
 
@@ -48,5 +48,5 @@ func (controller *Controller) nodeAddress() (address net.IP, err error) {
 			return net.ParseIP(address.Address), nil
 		}
 	}
-	return nil, fmt.Errorf("could not find address for node %s", controller.Configuration.NodeName)
+	return nil, fmt.Errorf("could not find address for node %s", nodeName)
 }

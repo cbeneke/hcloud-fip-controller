@@ -25,7 +25,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = controller.Run(ctx)
+	err = controller.Run(ctx, controllerConfig)
 	if err != nil {
 		fmt.Printf("could not run controller: %v\n", err)
 		os.Exit(1)
