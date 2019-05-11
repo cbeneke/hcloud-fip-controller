@@ -49,11 +49,14 @@ func NewControllerConfiguration() (*Configuration, error) {
 	var config Configuration
 
 	// Read config from file if present
-	file, err := ioutil.ReadFile("config/config.json")
-	if err == nil {
+	if _, err := os.Stat("config/config.json"); err == nil {
+		file, err := ioutil.ReadFile("config/config.json")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config: %v", err)
+		}
 		err = json.Unmarshal(file, &config)
 		if err != nil {
-			return nil, fmt.Errorf("could not decode config: %v", err)
+			return nil, fmt.Errorf("failed to decode config: %v", err)
 		}
 	}
 
