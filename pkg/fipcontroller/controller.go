@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,6 +25,7 @@ type Configuration struct {
 type Controller struct {
 	HetznerClient    *hcloud.Client
 	KubernetesClient *kubernetes.Clientset
+	Configuration    *Configuration
 }
 
 func NewController(config *Configuration) (*Controller, error) {
@@ -40,6 +42,7 @@ func NewController(config *Configuration) (*Controller, error) {
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
+		Configuration:    config,
 	}, nil
 }
 
@@ -58,19 +61,12 @@ func NewControllerConfiguration() (*Configuration, error) {
 		}
 	}
 
-	// overwrite existing configs from ENV vars if present
-	if apiToken := os.Getenv("HETZNER_CLOUD_API_TOKEN"); apiToken != "" {
-		config.HetznerAPIToken = apiToken
-	}
-	if floatingIP := os.Getenv("HETZNER_CLOUD_FLOATING_IP"); floatingIP != "" {
-		config.FloatingIPAddress = floatingIP
-	}
-	if nodeName := os.Getenv("KUBERNETES_NODE_NAME"); nodeName != "" {
-		config.NodeName = nodeName
-	}
-	if nodeAddressType := os.Getenv("KUBERNETES_NODE_ADDRESS_TYPE"); nodeAddressType != "" {
-		config.NodeAddressType = nodeAddressType
-	}
+	// Setup flags
+	flag.StringVar(&config.HetznerAPIToken, "hcloud-api-token", "", "Hetzner cloud API token")
+	flag.StringVar(&config.FloatingIPAddress, "floating-ip", "", "Hetzner cloud floating IP Address")
+	flag.StringVar(&config.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.StringVar(&config.NodeAddressType, "node-address-type", "", "Kubernetes node address type")
+	flag.Parse()
 
 	// Use defaults for unset optional configs
 	if config.NodeAddressType == "" {
@@ -96,8 +92,8 @@ func NewControllerConfiguration() (*Configuration, error) {
 	return &config, nil
 }
 
-func (controller *Controller) Run(ctx context.Context, config *Configuration) error {
-	if err := controller.UpdateFloatingIP(ctx, config); err != nil {
+func (controller *Controller) Run(ctx context.Context) error {
+	if err := controller.UpdateFloatingIP(ctx); err != nil {
 		return err
 	}
 	for {
@@ -105,15 +101,15 @@ func (controller *Controller) Run(ctx context.Context, config *Configuration) er
 		case <-ctx.Done():
 			return nil
 		case <-time.After(30 * time.Second):
-			if err := controller.UpdateFloatingIP(ctx, config); err != nil {
+			if err := controller.UpdateFloatingIP(ctx); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (controller *Controller) UpdateFloatingIP(ctx context.Context, config *Configuration) error {
-	nodeAddress, err := controller.nodeAddress(config.NodeName, config.NodeAddressType)
+func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
+	nodeAddress, err := controller.nodeAddress(controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
 	}
@@ -121,7 +117,7 @@ func (controller *Controller) UpdateFloatingIP(ctx context.Context, config *Conf
 	if err != nil {
 		return fmt.Errorf("could not get configured server: %v", err)
 	}
-	floatingIP, err := controller.floatingIP(ctx, config.FloatingIPAddress)
+	floatingIP, err := controller.floatingIP(ctx, controller.Configuration.FloatingIPAddress)
 	if err != nil {
 		return fmt.Errorf("could not get configured floating IP: %v", err)
 	}
