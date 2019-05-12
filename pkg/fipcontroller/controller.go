@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-kit/kit/log"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,9 +24,10 @@ type Controller struct {
 	KubernetesClient *kubernetes.Clientset
 	Configuration    *Configuration
 	NodeName         string
+	Logger           log.Logger
 }
 
-func NewController(config *Configuration) (*Controller, error) {
+func NewController(config *Configuration, logger log.Logger) (*Controller, error) {
 	hetznerClient, err := hetznerClient(config.HetznerAPIToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
@@ -42,6 +43,7 @@ func NewController(config *Configuration) (*Controller, error) {
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
 		NodeName:         os.Getenv("NODE_NAME"),
+		Logger:           logger,
 	}, nil
 }
 
@@ -115,7 +117,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	}
 
 	if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-		fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+		_ = controller.Logger.Log("msg", "Switching address '"+floatingIP.IP.String()+"' to server '"+server.Name+"'.")
 		_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 		if err != nil {
 			return fmt.Errorf("could not update floating IP: %v", err)

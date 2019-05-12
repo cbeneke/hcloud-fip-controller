@@ -6,18 +6,21 @@ import (
 	"os"
 
 	"github.com/cbeneke/hcloud-fip-controller/pkg/fipcontroller"
+	"github.com/go-kit/kit/log"
 )
 
 func main() {
+	logger := log.With(log.NewJSONLogger(log.NewSyncWriter(os.Stdout)), "time", log.DefaultTimestampUTC, "level", "INFO")
+
 	controllerConfig, err := fipcontroller.NewControllerConfiguration()
 	if err != nil {
-		fmt.Println(fmt.Errorf("could not parse controllerConfig: %v", err))
+		_ = logger.Log("msg", fmt.Errorf("could not parse controllerConfig: %v", err))
 		os.Exit(1)
 	}
 
-	controller, err := fipcontroller.NewController(controllerConfig)
+	controller, err := fipcontroller.NewController(controllerConfig, logger)
 	if err != nil {
-		fmt.Println(fmt.Errorf("could not initialise controller: %v", err))
+		_ = logger.Log("msg", fmt.Errorf("could not initialise controller: %v", err))
 		os.Exit(1)
 	}
 
@@ -27,7 +30,7 @@ func main() {
 
 	err = controller.Run(ctx)
 	if err != nil {
-		fmt.Printf("could not run controller: %v\n", err)
+		_ = logger.Log("msg", fmt.Errorf("could not run controller: %v", err))
 		os.Exit(1)
 	}
 }
