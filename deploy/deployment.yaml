@@ -19,28 +19,17 @@ spec:
         app: fip-controller
     spec:
       containers:
-      - name: fip-controller
-        image: cbeneke/hcloud-fip-controller:v0.0.3
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: config
-          mountPath: /app/config
-        env:
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: HETZNER_API_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: hcloud
-              key: token
+        - name: fip-controller
+          image: cbeneke/hcloud-fip-controller:v0.0.4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          envFrom:
+            - configMapRef:
+                name:  fip-controller-env
+            - secretRef:
+                name:  fip-controller-secrets
       serviceAccountName: fip-controller
-      volumes:
-      - configMap:
-          defaultMode: 420
-          items:
-          - key: config
-            path: config.json
-          name: fip-controller-config
-        name: config

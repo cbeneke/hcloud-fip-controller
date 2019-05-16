@@ -12,21 +12,21 @@ func hetznerClient(token string) (*hcloud.Client, error) {
 	return hetznerClient, nil
 }
 
-func (controller *Controller) floatingIP(ctx context.Context) (ip *hcloud.FloatingIP, err error) {
+func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) (ip *hcloud.FloatingIP, err error) {
 	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch floating IPs: %v", err)
 	}
 
 	for _, ip := range ips {
-		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(controller.Configuration.FloatingIPAddress)) {
+		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(ipAddress)) {
 			return ip, nil
 		}
-		if ip.Type == hcloud.FloatingIPTypeIPv6 && ip.Network.Contains(net.ParseIP(controller.Configuration.FloatingIPAddress)) {
+		if ip.Type == hcloud.FloatingIPTypeIPv6 && ip.Network.Contains(net.ParseIP(ipAddress)) {
 			return ip, nil
 		}
 	}
-	return nil, fmt.Errorf("IP address %s not allocated", controller.Configuration.FloatingIPAddress)
+	return nil, fmt.Errorf("IP address %s not allocated", ipAddress)
 }
 
 func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {

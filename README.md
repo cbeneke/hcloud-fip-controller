@@ -12,23 +12,33 @@ You need to make sure, to have the IP Address(es) configured on **every** node f
 
 # Configuration
 
+Environment variables take precedence over the config file
+
 ## ENV variables
 
-* NODE_NAME (required): The name of the scheduled node. Should be invoked via
-  fieldRef to spec.nodeName
-* HETZNER_API_TOKEN: The API token for the hetzner cloud. This must be set
-  either via ENV or config file
+* HETZNER_CLOUD_API_TOKEN  
+API token for the hetzner cloud access.
+
+* HETZNER_CLOUD_FLOATING_IP  
+Floating IP you want to configure. In case of IPv6 can be any of the /64 net.
+
+* KUBERNETES_NODE_ADDRESS_TYPE, *default:* "external"  
+Address type of the nodes. This might be set to internal, if your external IPs are  registered as internal IPs on the node objects (e.g. if you have no cloud controller manager). Can be "external" or "internal".
+
+* KUBERNETES_NODE_NAME  
+name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 
 ## config.json fields
 
-* hetznerApiToken: The API token for the hetzner cloud. This must be set either
-  via ENV or config file
-* floatingIPAddress: The floating IP address. If IPv6 it may be any IP address
-  located in the /64 net
-* nodeAddressType: Which node address type to check. This defaults to
-  "external" but might be set to "internal", if the external Cluster IP is
-  stored in the NodeInternalIP field (e.g. if cluster is not set up with hetzner
-  cloud controller).
+Valid fields in the config.json file and their respective ENV variable are
+
+```json
+{
+  "floatingIPAddress": "<HETZNER_CLOUD_FLOATING_IP>",
+  "hetznerApiToken": "<HETZNER_CLOUD_API_TOKEN>",
+  "nodeAddressType": "<KUBERNETES_NODE_ADDRESS_TYPE>"
+}
+```
 
 # Deploy to kubernetes
 
@@ -43,19 +53,16 @@ $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: fip-controller-config
+  name: fip-controller-env
   namespace: fip-controller
 data:
-  config: |
-    {
-      "floatingIPAddress": "<floating_ip_address>"
-    }
+  HETZNER_CLOUD_FLOATING_IP: <hetzner_cloud_floating_ip>
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: hcloud
+  name: fip-controller-secrets
   namespace: fip-controller
 stringData:
-  token: <hetzner_api_token>
+  HETZNER_CLOUD_API_TOKEN: <hetzner_cloud_api_token>
 ```
