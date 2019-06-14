@@ -3,7 +3,6 @@ package fipcontroller
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -46,9 +45,7 @@ func NewController(config *Configuration) (*Controller, error) {
 	}, nil
 }
 
-func NewControllerConfiguration() (*Configuration, error) {
-	var config Configuration
-
+func NewControllerConfiguration() (config *Configuration, err error) {
 	// Read config from file if present
 	if _, err := os.Stat("config/config.json"); err == nil {
 		file, err := ioutil.ReadFile("config/config.json")
@@ -61,35 +58,31 @@ func NewControllerConfiguration() (*Configuration, error) {
 		}
 	}
 
-	// Setup flags
-	flag.StringVar(&config.HetznerAPIToken, "hcloud-api-token", "", "Hetzner cloud API token")
-	flag.StringVar(&config.FloatingIPAddress, "floating-ip", "", "Hetzner cloud floating IP Address")
-	flag.StringVar(&config.NodeName, "node-name", "", "Kubernetes Node name")
-	flag.StringVar(&config.NodeAddressType, "node-address-type", "", "Kubernetes node address type")
-	flag.Parse()
-
 	// Use defaults for unset optional configs
 	if config.NodeAddressType == "" {
 		config.NodeAddressType = "external"
 	}
 
+	return config, nil
+}
+
+func ValidateControllerConfig(configuration *Configuration) (ok bool, err error) {
 	// Validate required configs
 	var errs []string
 
-	if config.HetznerAPIToken == "" {
-		errs = append(errs, "hetzner cloud API token required but not configured")
+	if configuration.HetznerAPIToken == "" {
+		errs = append(errs, "hetzner cloud API token")
 	}
-	if config.FloatingIPAddress == "" {
-		errs = append(errs, "hetzner floating IP required but not configured")
+	if configuration.FloatingIPAddress == "" {
+		errs = append(errs, "hetzner cloud floating IP")
 	}
-	if config.NodeName == "" {
-		errs = append(errs, "kubernetes node name required but not configured")
+	if configuration.NodeName == "" {
+		errs = append(errs, "kubernetes node name")
 	}
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("controller configuration invalid: %s", strings.Join(errs, ","))
+		return false, fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
 	}
-
-	return &config, nil
+	return true, nil
 }
 
 func (controller *Controller) Run(ctx context.Context) error {

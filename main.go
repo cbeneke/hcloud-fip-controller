@@ -30,6 +30,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Setup flags
+	flag.StringVar(&controllerConfig.HetznerAPIToken, "hcloud-api-token", "", "Hetzner cloud API token")
+	flag.StringVar(&controllerConfig.FloatingIPAddress, "floating-ip", "", "Hetzner cloud floating IP Address")
+	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "", "Kubernetes node address type")
+	flag.Parse()
+
+	if ok, err := fipcontroller.ValidateControllerConfig(controllerConfig); !ok {
+		fmt.Println(fmt.Errorf("controllerConfig not valid: %v", err))
+		os.Exit(1)
+	}
+
 	controller, err := fipcontroller.NewController(controllerConfig)
 	if err != nil {
 		fmt.Println(fmt.Errorf("could not initialise controller: %v", err))
