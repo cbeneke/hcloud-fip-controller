@@ -16,16 +16,16 @@ Environment variables take precedence over the config file
 
 ## ENV variables
 
-* HETZNER_CLOUD_API_TOKEN  
+* HCLOUD_API_TOKEN  
 API token for the hetzner cloud access.
 
-* HETZNER_CLOUD_FLOATING_IP  
+* HCLOUD_FLOATING_IP  
 Floating IP you want to configure. In case of IPv6 can be any of the /64 net.
 
-* KUBERNETES_NODE_ADDRESS_TYPE, *default:* "external"  
+* NODE_ADDRESS_TYPE, *default:* "external"  
 Address type of the nodes. This might be set to internal, if your external IPs are  registered as internal IPs on the node objects (e.g. if you have no cloud controller manager). Can be "external" or "internal".
 
-* KUBERNETES_NODE_NAME  
+* NODE_NAME  
 name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 
 ## config.json fields
@@ -34,9 +34,9 @@ Valid fields in the config.json file and their respective ENV variable are
 
 ```json
 {
-  "floatingIPAddress": "<HETZNER_CLOUD_FLOATING_IP>",
-  "hetznerApiToken": "<HETZNER_CLOUD_API_TOKEN>",
-  "nodeAddressType": "<KUBERNETES_NODE_ADDRESS_TYPE>"
+  "hcloudFloatingIP": "<HCLOUD_FLOATING_IP>",
+  "hcloudApiToken": "<HCLOUD_API_TOKEN>",
+  "nodeAddressType": "<NODE_ADDRESS_TYPE>"
 }
 ```
 
@@ -56,7 +56,7 @@ metadata:
   name: fip-controller-env
   namespace: fip-controller
 data:
-  HETZNER_CLOUD_FLOATING_IP: <hetzner_cloud_floating_ip>
+  HCLOUD_FLOATING_IP: <hcloud_floating_ip>
 ---
 apiVersion: v1
 kind: Secret
@@ -64,5 +64,5 @@ metadata:
   name: fip-controller-secrets
   namespace: fip-controller
 stringData:
-  HETZNER_CLOUD_API_TOKEN: <hetzner_cloud_api_token>
+  HCLOUD_API_TOKEN: <hcloud_api_token>
 ```

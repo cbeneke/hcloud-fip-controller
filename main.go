@@ -2,42 +2,30 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/cbeneke/hcloud-fip-controller/pkg/fipcontroller"
+	"github.com/namsral/flag"
 )
 
 func main() {
-	// overwrite existing configs from ENV vars if present
-	if apiToken := os.Getenv("HETZNER_CLOUD_API_TOKEN"); apiToken != "" {
-		_ = flag.Set("hcloud-api-token", apiToken)
-	}
-	if floatingIP := os.Getenv("HETZNER_CLOUD_FLOATING_IP"); floatingIP != "" {
-		_ = flag.Set("floating-ip", floatingIP)
-	}
-	if nodeName := os.Getenv("KUBERNETES_NODE_NAME"); nodeName != "" {
-		_ = flag.Set("node-name", nodeName)
-	}
-	if nodeAddressType := os.Getenv("KUBERNETES_NODE_ADDRESS_TYPE"); nodeAddressType != "" {
-		_ = flag.Set("node-address-type", nodeAddressType)
-	}
+	controllerConfig := &fipcontroller.Configuration{}
 
-	controllerConfig, err := fipcontroller.NewControllerConfiguration()
-	if err != nil {
+	// Setup flags
+	flag.StringVar(&controllerConfig.HcloudApiToken, "hcloud-api-token", "", "Hetzner cloud API token")
+	flag.StringVar(&controllerConfig.HcloudFloatingIP, "hcloud-floating-ip", "", "Hetzner cloud floating IP Address")
+	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
+
+	if err := fipcontroller.ParseConfigFile(controllerConfig); err != nil {
 		fmt.Println(fmt.Errorf("could not initialise controllerConfig: %v", err))
 		os.Exit(1)
 	}
 
-	// Setup flags
-	flag.StringVar(&controllerConfig.HetznerAPIToken, "hcloud-api-token", "", "Hetzner cloud API token")
-	flag.StringVar(&controllerConfig.FloatingIPAddress, "floating-ip", "", "Hetzner cloud floating IP Address")
-	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
-	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "", "Kubernetes node address type")
 	flag.Parse()
 
-	if ok, err := fipcontroller.ValidateControllerConfig(controllerConfig); !ok {
+	if err := fipcontroller.ValidateControllerConfig(controllerConfig); err != nil {
 		fmt.Println(fmt.Errorf("controllerConfig not valid: %v", err))
 		os.Exit(1)
 	}

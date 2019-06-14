@@ -15,10 +15,10 @@ import (
 )
 
 type Configuration struct {
-	HetznerAPIToken   string
-	FloatingIPAddress string
-	NodeAddressType   string
-	NodeName          string
+	HcloudApiToken   string
+	HcloudFloatingIP string
+	NodeAddressType  string
+	NodeName         string
 }
 
 type Controller struct {
@@ -28,7 +28,7 @@ type Controller struct {
 }
 
 func NewController(config *Configuration) (*Controller, error) {
-	hetznerClient, err := hetznerClient(config.HetznerAPIToken)
+	hetznerClient, err := hetznerClient(config.HcloudApiToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise hetzner client: %v", err)
 	}
@@ -45,44 +45,38 @@ func NewController(config *Configuration) (*Controller, error) {
 	}, nil
 }
 
-func NewControllerConfiguration() (config *Configuration, err error) {
-	// Read config from file if present
+func ParseConfigFile(configuration *Configuration) error {
 	if _, err := os.Stat("config/config.json"); err == nil {
 		file, err := ioutil.ReadFile("config/config.json")
 		if err != nil {
-			return nil, fmt.Errorf("failed to read config: %v", err)
+			return fmt.Errorf("failed to read config: %v", err)
 		}
-		err = json.Unmarshal(file, &config)
+		err = json.Unmarshal(file, &configuration)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode config: %v", err)
+			return fmt.Errorf("failed to decode config: %v", err)
 		}
 	}
 
-	// Use defaults for unset optional configs
-	if config.NodeAddressType == "" {
-		config.NodeAddressType = "external"
-	}
-
-	return config, nil
+	return  nil
 }
 
-func ValidateControllerConfig(configuration *Configuration) (ok bool, err error) {
+func ValidateControllerConfig(configuration *Configuration) error {
 	// Validate required configs
 	var errs []string
 
-	if configuration.HetznerAPIToken == "" {
+	if configuration.HcloudApiToken == "" {
 		errs = append(errs, "hetzner cloud API token")
 	}
-	if configuration.FloatingIPAddress == "" {
+	if configuration.HcloudFloatingIP == "" {
 		errs = append(errs, "hetzner cloud floating IP")
 	}
 	if configuration.NodeName == "" {
 		errs = append(errs, "kubernetes node name")
 	}
 	if len(errs) > 0 {
-		return false, fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
+		return  fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
 	}
-	return true, nil
+	return nil
 }
 
 func (controller *Controller) Run(ctx context.Context) error {
@@ -110,7 +104,7 @@ func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not get configured server: %v", err)
 	}
-	floatingIP, err := controller.floatingIP(ctx, controller.Configuration.FloatingIPAddress)
+	floatingIP, err := controller.floatingIP(ctx, controller.Configuration.HcloudFloatingIP)
 	if err != nil {
 		return fmt.Errorf("could not get configured floating IP: %v", err)
 	}
