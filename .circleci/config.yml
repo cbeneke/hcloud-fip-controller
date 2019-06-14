@@ -1,4 +1,4 @@
-version: 2.1
+version: 2
 executors:
   docker-publisher:
     environment:
@@ -63,7 +63,6 @@ workflows:
       - publish-latest:
           requires:
             - build
-          context: Dockerhub
           filters:
             branches:
               only: master
@@ -78,7 +77,6 @@ workflows:
       - publish-tag:
           requires:
             - build
-          context: Dockerhub
           filters:
             tags:
               only: /^v[\d]+\.[\d]+\.[\d]+/
