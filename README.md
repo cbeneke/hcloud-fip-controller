@@ -7,8 +7,8 @@ This project is currently work in progress. It might not work and/or not be docu
 
 This is a small controller, meant to be running on a kubernetes cluster on hetzner cloud virtual machines.
 
-The running pod will check the hetzner cloud API every 30 seconds to check if the configured IP Address (or subnet in case of IPv6) is assigned to the server, the running pod is scheduled to. If not it will update the assignment.
-You need to make sure, to have the IP Address(es) configured on **every** node for this failover to correctly work, as the controller will not take care of the network configuration of the node.
+The running pod will check the hetzner cloud API every 30 seconds to check if the configured IP Addresses (or subnets in case of IPv6) are assigned to the server, the running pod is scheduled to. If not it will update the assignments.
+You need to make sure, to have the IP Addresses configured on **every** node for this failover to correctly work, as the controller will not take care of the network configuration of the nodes.
 
 # Configuration
 
@@ -30,7 +30,7 @@ name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 
 ## config.json fields
 
-Valid fields in the config.json file and their respective ENV variable are
+Valid fields in the config.json file and their respective ENV variables are
 
 ```json
 {
@@ -62,8 +62,8 @@ data:
   config.json: |
     {
       "hcloudFloatingIPs": [
-        "<hcloud-floaiting-ip>",
-        "<hcloud-floaiting-ip>",
+        "<hcloud-floating-ip>",
+        "<hcloud-floating-ip>",
         ...
       ]
     }
