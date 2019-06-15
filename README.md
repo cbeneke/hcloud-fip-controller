@@ -20,7 +20,7 @@ Environment variables take precedence over the config file
 API token for the hetzner cloud access.
 
 * HCLOUD_FLOATING_IP  
-Floating IP you want to configure. In case of IPv6 can be any of the /64 net.
+Floating IP you want to configure. In case of IPv6 can be any of the /64 net. If you want to use multiple IPs use config file or command line parameters
 
 * NODE_ADDRESS_TYPE, *default:* "external"  
 Address type of the nodes. This might be set to internal, if your external IPs are  registered as internal IPs on the node objects (e.g. if you have no cloud controller manager). Can be "external" or "internal".
@@ -34,9 +34,12 @@ Valid fields in the config.json file and their respective ENV variable are
 
 ```json
 {
-  "hcloudFloatingIP": "<HCLOUD_FLOATING_IP>",
+  "hcloudFloatingIPs": [
+    "<HCLOUD_FLOATING_IP>"
+  ],
   "hcloudApiToken": "<HCLOUD_API_TOKEN>",
-  "nodeAddressType": "<NODE_ADDRESS_TYPE>"
+  "nodeAddressType": "<NODE_ADDRESS_TYPE>",
+  "nodeName": "<NODE_NAME>"
 }
 ```
 
@@ -53,10 +56,17 @@ $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: fip-controller-env
+  name: fip-controller-config
   namespace: fip-controller
 data:
-  HCLOUD_FLOATING_IP: <hcloud_floating_ip>
+  config.json: |
+    {
+      "hcloudFloatingIPs": [
+        "<hcloud-floaiting-ip>",
+        "<hcloud-floaiting-ip>",
+        ...
+      ]
+    }
 ---
 apiVersion: v1
 kind: Secret

@@ -13,11 +13,21 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+type stringArrayFlags []string
+
+func (flags *stringArrayFlags) String() string {
+	return fmt.Sprintf("['%s']", strings.Join(*flags, "', '"))
+}
+func (flags *stringArrayFlags) Set(value string) error {
+	*flags = append(*flags, value)
+	return nil
+}
+
 type Configuration struct {
-	HcloudApiToken   string
-	HcloudFloatingIP string
-	NodeAddressType  string
-	NodeName         string
+	HcloudApiToken    string
+	HcloudFloatingIPs stringArrayFlags
+	NodeAddressType   string
+	NodeName          string
 }
 
 type Controller struct {
@@ -65,8 +75,8 @@ func (configuration *Configuration) Validate() error {
 	if configuration.HcloudApiToken == "" {
 		errs = append(errs, "hetzner cloud API token")
 	}
-	if configuration.HcloudFloatingIP == "" {
-		errs = append(errs, "hetzner cloud floating IP")
+	if len(configuration.HcloudFloatingIPs) <= 0 {
+		errs = append(errs, "hetzner cloud floating IPs")
 	}
 	if configuration.NodeName == "" {
 		errs = append(errs, "kubernetes node name")
@@ -78,7 +88,7 @@ func (configuration *Configuration) Validate() error {
 }
 
 func (controller *Controller) Run(ctx context.Context) error {
-	if err := controller.UpdateFloatingIP(ctx); err != nil {
+	if err := controller.UpdateFloatingIPs(ctx); err != nil {
 		return err
 	}
 	for {
@@ -86,14 +96,14 @@ func (controller *Controller) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(30 * time.Second):
-			if err := controller.UpdateFloatingIP(ctx); err != nil {
+			if err := controller.UpdateFloatingIPs(ctx); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
+func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	nodeAddress, err := controller.nodeAddress(controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
@@ -102,19 +112,22 @@ func (controller *Controller) UpdateFloatingIP(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not get configured server: %v", err)
 	}
-	floatingIP, err := controller.floatingIP(ctx, controller.Configuration.HcloudFloatingIP)
-	if err != nil {
-		return fmt.Errorf("could not get configured floating IP: %v", err)
-	}
 
-	if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-		fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
-		_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+	for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
+		floatingIP, err := controller.floatingIP(ctx, floatingIPAddr)
 		if err != nil {
-			return fmt.Errorf("could not update floating IP: %v", err)
+			return fmt.Errorf("could not get floating IP '%s': %v", floatingIPAddr, err)
 		}
-		if response.StatusCode != 201 {
-			return fmt.Errorf("could not update floating IP: Got HTTP Code %d, expected 201", response.StatusCode)
+
+		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
+			fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			if err != nil {
+				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)
+			}
+			if response.StatusCode != 201 {
+				return fmt.Errorf("could not update floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
+			}
 		}
 	}
 

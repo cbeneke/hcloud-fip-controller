@@ -13,8 +13,9 @@ func main() {
 	controllerConfig := &fipcontroller.Configuration{}
 
 	// Setup flags
+	flag.Var(&controllerConfig.HcloudFloatingIPs, "hcloud-floating-ip", "Hetzner cloud floating IP Address. This option can be specified multiple times")
+
 	flag.StringVar(&controllerConfig.HcloudApiToken, "hcloud-api-token", "", "Hetzner cloud API token")
-	flag.StringVar(&controllerConfig.HcloudFloatingIP, "hcloud-floating-ip", "", "Hetzner cloud floating IP Address")
 	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
 	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
 

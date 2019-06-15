@@ -28,8 +28,13 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
           envFrom:
-            - configMapRef:
-                name:  fip-controller-env
             - secretRef:
                 name:  fip-controller-secrets
+          volumeMounts:
+            - name: conifg
+              mountPath: /app/config
       serviceAccountName: fip-controller
+      volumes:
+        - name: config
+          configMap:
+            name: fip-controller-config
