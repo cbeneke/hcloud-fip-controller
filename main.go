@@ -18,14 +18,18 @@ func main() {
 	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
 	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
 
-	if err := fipcontroller.ParseConfigFile(controllerConfig); err != nil {
-		fmt.Println(fmt.Errorf("could not initialise controllerConfig: %v", err))
-		os.Exit(1)
+	// Parse options from file
+	if _, err := os.Stat("config/config.json"); err == nil {
+		if err := controllerConfig.VarsFromFile("config/config.json"); err != nil {
+			fmt.Println(fmt.Errorf("could not parse controller config file: %v", err))
+			os.Exit(1)
+		}
 	}
 
+	// When default- and file-configs are read, parse command line options with highest priority
 	flag.Parse()
 
-	if err := fipcontroller.ValidateControllerConfig(controllerConfig); err != nil {
+	if err := controllerConfig.Validate(); err != nil {
 		fmt.Println(fmt.Errorf("controllerConfig not valid: %v", err))
 		os.Exit(1)
 	}
@@ -36,7 +40,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: Use channel with interrupt signal that blocks until it receives to cancel the context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

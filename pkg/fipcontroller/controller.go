@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 
@@ -45,23 +44,22 @@ func NewController(config *Configuration) (*Controller, error) {
 	}, nil
 }
 
-func ParseConfigFile(configuration *Configuration) error {
-	if _, err := os.Stat("config/config.json"); err == nil {
-		file, err := ioutil.ReadFile("config/config.json")
-		if err != nil {
-			return fmt.Errorf("failed to read config: %v", err)
-		}
-		err = json.Unmarshal(file, &configuration)
-		if err != nil {
-			return fmt.Errorf("failed to decode config: %v", err)
-		}
+// Read given config file and overwrite options from given Configuration
+func (configuration *Configuration) VarsFromFile(configFile string) error {
+	file, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
 	}
 
-	return  nil
+	err = json.Unmarshal(file, &configuration)
+	if err != nil {
+		return fmt.Errorf("failed to decode config file: %v", err)
+	}
+
+	return nil
 }
 
-func ValidateControllerConfig(configuration *Configuration) error {
-	// Validate required configs
+func (configuration *Configuration) Validate() error {
 	var errs []string
 
 	if configuration.HcloudApiToken == "" {
@@ -74,7 +72,7 @@ func ValidateControllerConfig(configuration *Configuration) error {
 		errs = append(errs, "kubernetes node name")
 	}
 	if len(errs) > 0 {
-		return  fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
+		return fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
 	}
 	return nil
 }
