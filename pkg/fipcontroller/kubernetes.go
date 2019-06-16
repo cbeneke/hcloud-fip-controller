@@ -1,10 +1,17 @@
 package fipcontroller
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"net"
+	"strings"
+	"time"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"net"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,4 +56,55 @@ func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (add
 		}
 	}
 	return nil, fmt.Errorf("could not find address for node %s", nodeName)
+}
+
+func (controller *Controller) leaseLock(id string) (lock *resourcelock.LeaseLock) {
+	lock = &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      controller.Configuration.LeaseLockName,
+			Namespace: controller.Configuration.Namespace,
+		},
+		Client: controller.KubernetesClient.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: id,
+		},
+	}
+	return
+}
+
+func (controller *Controller) leaderElectionConfig() (config leaderelection.LeaderElectionConfig) {
+	config = leaderelection.LeaderElectionConfig{
+		Lock:            controller.leaseLock(controller.Configuration.PodName),
+		ReleaseOnCancel: true,
+		LeaseDuration:   60 * time.Second,
+		RenewDeadline:   15 * time.Second,
+		RetryPeriod:     5 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: controller.onStartedLeading,
+			OnStoppedLeading: controller.onStoppedLeading,
+		},
+	}
+	return
+}
+
+func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
+	leaderelection.RunOrDie(ctx, controller.leaderElectionConfig())
+
+	// because the context is closed, the client should report errors
+	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseLockName, metav1.GetOptions{})
+	if err == nil || !strings.Contains(err.Error(), "the leader is shutting down") {
+		log.Fatalf("%s: expected to get an error when trying to make a client call: %v", controller.Configuration.PodName, err)
+	}
+}
+
+func (controller *Controller) onStartedLeading(ctx context.Context) {
+	log.Println("Became Leader")
+	err := controller.Run(ctx)
+	if err != nil {
+		log.Fatalf("%s: could not run controller: %v\n", controller.Configuration.PodName, err)
+	}
+}
+
+func (controller *Controller) onStoppedLeading() {
+
 }
