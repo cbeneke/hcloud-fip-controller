@@ -26,6 +26,7 @@ func (flags *stringArrayFlags) Set(value string) error {
 type Configuration struct {
 	HcloudApiToken    string
 	HcloudFloatingIPs stringArrayFlags
+	LeaseDuration     int
 	LeaseLockName     string
 	Namespace         string
 	NodeAddressType   string
@@ -86,6 +87,9 @@ func (configuration *Configuration) Validate() error {
 	}
 	if configuration.Namespace == "" {
 		errs = append(errs, "kubernetes namespace")
+	}
+	if configuration.LeaseDuration <= 0 {
+		errs = append(errs, "lease duration needs to be greater than one")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
