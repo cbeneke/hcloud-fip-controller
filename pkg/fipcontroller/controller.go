@@ -27,7 +27,7 @@ type Configuration struct {
 	HcloudApiToken    string
 	HcloudFloatingIPs stringArrayFlags
 	LeaseDuration     int
-	LeaseLockName     string
+	LeaseName         string
 	Namespace         string
 	NodeAddressType   string
 	NodeName          string

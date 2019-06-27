@@ -61,7 +61,7 @@ func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (add
 func (controller *Controller) leaseLock(id string) (lock *resourcelock.LeaseLock) {
 	lock = &resourcelock.LeaseLock{
 		LeaseMeta: metav1.ObjectMeta{
-			Name:      controller.Configuration.LeaseLockName,
+			Name:      controller.Configuration.LeaseName,
 			Namespace: controller.Configuration.Namespace,
 		},
 		Client: controller.KubernetesClient.CoordinationV1(),
@@ -91,7 +91,7 @@ func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 	leaderelection.RunOrDie(ctx, controller.leaderElectionConfig())
 
 	// because the context is closed, the client should report errors
-	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseLockName, metav1.GetOptions{})
+	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseName, metav1.GetOptions{})
 	if err == nil || !strings.Contains(err.Error(), "the leader is shutting down") {
 		log.Fatalf("%s: expected to get an error when trying to make a client call: %v", controller.Configuration.PodName, err)
 	}
