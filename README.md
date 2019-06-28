@@ -51,7 +51,7 @@ Valid fields in the config.json file and their respective ENV variables are
   ],
   "hcloudApiToken": "<HCLOUD_API_TOKEN>",
   "leaseDuration": "<LEASE_DURATION>",
-  "leaseName": "<LEASE_LOCK_NAME>",
+  "leaseName": "<LEASE_NAME>",
   "namespace": "<NAMESPACE>",
   "nodeAddressType": "<NODE_ADDRESS_TYPE>",
   "nodeName": "<NODE_NAME>",
