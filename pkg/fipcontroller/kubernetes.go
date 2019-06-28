@@ -106,5 +106,5 @@ func (controller *Controller) onStartedLeading(ctx context.Context) {
 }
 
 func (controller *Controller) onStoppedLeading() {
-
+	log.Println("Stopped leading")
 }
