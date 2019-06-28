@@ -40,4 +40,3 @@ subjects:
   - kind: ServiceAccount
     name: fip-controller
     namespace: fip-controller
-
