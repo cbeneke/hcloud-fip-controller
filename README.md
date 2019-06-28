@@ -26,7 +26,19 @@ Floating IP you want to configure. In case of IPv6 can be any of the /64 net. If
 Address type of the nodes. This might be set to internal, if your external IPs are  registered as internal IPs on the node objects (e.g. if you have no cloud controller manager). Can be "external" or "internal".
 
 * NODE_NAME  
-name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
+Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
+
+* NAMESPACE
+Namespace the pod is running in. Should be invoked via fieldRef to metadata.namespace
+
+* POD_NAME
+Name of the pod. Should be invoked via fieldRef to metadata.name
+
+* LEASE_NAME, *default:* "fip"
+Name of the lease created by the lease lock used for leader election
+
+* LEASE_DURATION, *default:* 30
+Duration of the lease used by the lease lock. This is the maximum time until a new leader will be elected in case of failure.
 
 ## config.json fields
 
@@ -38,8 +50,12 @@ Valid fields in the config.json file and their respective ENV variables are
     "<HCLOUD_FLOATING_IP>"
   ],
   "hcloudApiToken": "<HCLOUD_API_TOKEN>",
+  "leaseDuration": "<LEASE_DURATION>",
+  "leaseName": "<LEASE_NAME>",
+  "namespace": "<NAMESPACE>",
   "nodeAddressType": "<NODE_ADDRESS_TYPE>",
-  "nodeName": "<NODE_NAME>"
+  "nodeName": "<NODE_NAME>",
+  "podName": "<POD_NAME>"
 }
 ```
 

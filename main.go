@@ -16,8 +16,12 @@ func main() {
 	flag.Var(&controllerConfig.HcloudFloatingIPs, "hcloud-floating-ip", "Hetzner cloud floating IP Address. This option can be specified multiple times")
 
 	flag.StringVar(&controllerConfig.HcloudApiToken, "hcloud-api-token", "", "Hetzner cloud API token")
-	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.IntVar(&controllerConfig.LeaseDuration, "lease-duration", 30, "Time to wait (in seconds) until next leader check")
+	flag.StringVar(&controllerConfig.LeaseName, "lease-name", "fip", "Name of the lease lock for leaderelection")
+	flag.StringVar(&controllerConfig.Namespace, "namespace", "", "Kubernetes Namespace")
 	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
+	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.StringVar(&controllerConfig.PodName, "pod-name", "", "Kubernetes pod name")
 
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {
@@ -44,9 +48,5 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = controller.Run(ctx)
-	if err != nil {
-		fmt.Printf("could not run controller: %v\n", err)
-		os.Exit(1)
-	}
+	controller.RunWithLeaderElection(ctx)
 }

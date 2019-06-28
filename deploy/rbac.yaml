@@ -17,6 +17,15 @@ rules:
     verbs:
       - get
       - list
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - "leases"
+    verbs:
+      - "get"
+      - "list"
+      - "update"
+      - "create"
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -31,3 +40,4 @@ subjects:
   - kind: ServiceAccount
     name: fip-controller
     namespace: fip-controller
+
