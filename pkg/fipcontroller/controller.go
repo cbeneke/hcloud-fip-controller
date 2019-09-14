@@ -18,6 +18,7 @@ type stringArrayFlags []string
 func (flags *stringArrayFlags) String() string {
 	return fmt.Sprintf("['%s']", strings.Join(*flags, "', '"))
 }
+
 func (flags *stringArrayFlags) Set(value string) error {
 	*flags = append(*flags, value)
 	return nil
