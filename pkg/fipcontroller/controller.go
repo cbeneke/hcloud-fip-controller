@@ -142,20 +142,26 @@ func (controller *Controller) Run(ctx context.Context) error {
 }
 
 func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
+	controller.Logger.Debugf("Checking floating IPs")
+
 	nodeAddress, err := controller.nodeAddress(controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
 	}
+	controller.Logger.Debugf("Found node address: %s", nodeAddress.String())
+
 	server, err := controller.server(ctx, nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not get configured server: %v", err)
 	}
+	controller.Logger.Debugf("Found server: %s (%d)", server.Name, server.ID)
 
 	for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
 		floatingIP, err := controller.floatingIP(ctx, floatingIPAddr)
 		if err != nil {
 			return fmt.Errorf("could not get floating IP '%s': %v", floatingIPAddr, err)
 		}
+		controller.Logger.Debugf("Checking floating IP: %s", floatingIP.IP.String())
 
 		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
 			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)

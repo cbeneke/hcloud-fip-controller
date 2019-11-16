@@ -35,6 +35,7 @@ func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (add
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
+	controller.Logger.Debugf("Found %d nodes", len(nodes.Items))
 
 	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
@@ -43,11 +44,13 @@ func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (add
 			break
 		}
 	}
+	controller.Logger.Debugf("Found %d addresses", len(addresses))
 
 	checkAddressType := corev1.NodeExternalIP
 	if nodeAddressType == "internal" {
 		checkAddressType = corev1.NodeInternalIP
 	}
+	controller.Logger.Debugf("Using address type %s", checkAddressType)
 
 	for _, address := range addresses {
 		if address.Type == checkAddressType {
@@ -92,18 +95,18 @@ func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 	// because the context is closed, the client should report errors
 	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseName, metav1.GetOptions{})
 	if err == nil || !strings.Contains(err.Error(), "the leader is shutting down") {
-		controller.Logger.Fatalf("expected to get an error when trying to make a client call: %v", err)
+		controller.Logger.Fatalf("Expected to get an error when trying to make a client call: %v", err)
 	}
 }
 
 func (controller *Controller) onStartedLeading(ctx context.Context) {
-	controller.Logger.Info("Became Leader...")
+	controller.Logger.Info("Started leading")
 	err := controller.Run(ctx)
 	if err != nil {
-		controller.Logger.Fatalf("could not run controller: %v", err)
+		controller.Logger.Fatalf("Could not run controller: %v", err)
 	}
 }
 
 func (controller *Controller) onStoppedLeading() {
-	controller.Logger.Info("Stopped leading...")
+	controller.Logger.Info("Stopped leading")
 }

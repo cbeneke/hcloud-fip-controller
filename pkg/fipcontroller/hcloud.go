@@ -17,6 +17,7 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch floating IPs: %v", err)
 	}
+	controller.Logger.Debugf("Fetched %s IP addresses", len(ips))
 
 	for _, ip := range ips {
 		if ip.Type == hcloud.FloatingIPTypeIPv4 && ip.IP.Equal(net.ParseIP(ipAddress)) {
@@ -34,6 +35,7 @@ func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hc
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
 	}
+	controller.Logger.Debugf("Fetched %s servers", len(servers))
 
 	for _, server := range servers {
 		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
