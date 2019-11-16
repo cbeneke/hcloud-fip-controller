@@ -158,7 +158,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		}
 
 		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-			controller.Logger.Info("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
 			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)
