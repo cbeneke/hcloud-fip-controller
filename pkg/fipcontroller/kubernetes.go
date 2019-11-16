@@ -3,7 +3,6 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -93,18 +92,18 @@ func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 	// because the context is closed, the client should report errors
 	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseName, metav1.GetOptions{})
 	if err == nil || !strings.Contains(err.Error(), "the leader is shutting down") {
-		log.Fatalf("%s: expected to get an error when trying to make a client call: %v", controller.Configuration.PodName, err)
+		controller.Logger.Fatalf("expected to get an error when trying to make a client call: %v", err)
 	}
 }
 
 func (controller *Controller) onStartedLeading(ctx context.Context) {
-	log.Println("Became Leader")
+	controller.Logger.Info("Became Leader...")
 	err := controller.Run(ctx)
 	if err != nil {
-		log.Fatalf("%s: could not run controller: %v\n", controller.Configuration.PodName, err)
+		controller.Logger.Fatalf("could not run controller: %v", err)
 	}
 }
 
 func (controller *Controller) onStoppedLeading() {
-	log.Println("Stopped leading")
+	controller.Logger.Info("Stopped leading...")
 }

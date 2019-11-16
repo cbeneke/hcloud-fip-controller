@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -25,20 +27,22 @@ func (flags *stringArrayFlags) Set(value string) error {
 }
 
 type Configuration struct {
-	HcloudApiToken    string
-	HcloudFloatingIPs stringArrayFlags
-	LeaseDuration     int
-	LeaseName         string
-	Namespace         string
-	NodeAddressType   string
-	NodeName          string
-	PodName           string
+	HcloudApiToken    string           `json:"hcloud_api_token,omitempty"`
+	HcloudFloatingIPs stringArrayFlags `json:"hcloud_floating_ips,omitempty"`
+	LeaseDuration     int              `json:"lease_duration,omitempty"`
+	LeaseName         string           `json:"lease_name,omitempty"`
+	Namespace         string           `json:"namespace,omitempty"`
+	NodeAddressType   string           `json:"node_address_type,omitempty"`
+	NodeName          string           `json:"node_name,omitempty"`
+	PodName           string           `json:"pod_name,omitempty"`
+	LogLevel          string           `json:"log_level,omitempty"`
 }
 
 type Controller struct {
 	HetznerClient    *hcloud.Client
 	KubernetesClient *kubernetes.Clientset
 	Configuration    *Configuration
+	Logger           *logrus.Logger
 }
 
 func NewController(config *Configuration) (*Controller, error) {
@@ -52,10 +56,25 @@ func NewController(config *Configuration) (*Controller, error) {
 		return nil, fmt.Errorf("could not initialise kubernetes client: %v", err)
 	}
 
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		DisableColors: true,
+		FullTimestamp: true,
+	})
+	logger.SetReportCaller(true)
+	logger.SetOutput(os.Stdout)
+
+	loglevel, err := logrus.ParseLevel(config.LogLevel)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse log level: %v", err)
+	}
+	logger.SetLevel(loglevel)
+
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
+		Logger:           logger,
 	}, nil
 }
 
@@ -76,24 +95,29 @@ func (configuration *Configuration) VarsFromFile(configFile string) error {
 
 func (configuration *Configuration) Validate() error {
 	var errs []string
+	var undefinedErrs []string
 
 	if configuration.HcloudApiToken == "" {
-		errs = append(errs, "hetzner cloud API token")
+		undefinedErrs = append(errs, "hetzner cloud API token")
 	}
 	if len(configuration.HcloudFloatingIPs) <= 0 {
-		errs = append(errs, "hetzner cloud floating IPs")
+		undefinedErrs = append(errs, "hetzner cloud floating IPs")
 	}
 	if configuration.NodeName == "" {
-		errs = append(errs, "kubernetes node name")
+		undefinedErrs = append(errs, "kubernetes node name")
 	}
 	if configuration.Namespace == "" {
-		errs = append(errs, "kubernetes namespace")
+		undefinedErrs = append(errs, "kubernetes namespace")
 	}
 	if configuration.LeaseDuration <= 0 {
 		errs = append(errs, "lease duration needs to be greater than one")
 	}
+
+	if len(undefinedErrs) > 0 {
+		errs = append(errs, fmt.Sprintf("required configuration options not configured: %s", strings.Join(errs, ", ")))
+	}
 	if len(errs) > 0 {
-		return fmt.Errorf("required configuration options not configured: %s", strings.Join(errs, ", "))
+		return fmt.Errorf("%s", strings.Join(errs, ", "))
 	}
 	return nil
 }
@@ -102,9 +126,12 @@ func (controller *Controller) Run(ctx context.Context) error {
 	if err := controller.UpdateFloatingIPs(ctx); err != nil {
 		return err
 	}
+	controller.Logger.Info("Initialization complete. Starting reconciliation")
+
 	for {
 		select {
 		case <-ctx.Done():
+			controller.Logger.Info("Context Done. Shutting down")
 			return nil
 		case <-time.After(30 * time.Second):
 			if err := controller.UpdateFloatingIPs(ctx); err != nil {
@@ -131,7 +158,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		}
 
 		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-			fmt.Printf("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
+			controller.Logger.Info("Switching address '%s' to server '%s'.\n", floatingIP.IP.String(), server.Name)
 			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
 				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)

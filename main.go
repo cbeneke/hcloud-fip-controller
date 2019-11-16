@@ -22,6 +22,7 @@ func main() {
 	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
 	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
 	flag.StringVar(&controllerConfig.PodName, "pod-name", "", "Kubernetes pod name")
+	flag.StringVar(&controllerConfig.LogLevel, "log-level", "Info", "Log level")
 
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {
