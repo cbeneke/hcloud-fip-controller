@@ -78,7 +78,7 @@ metadata:
 data:
   config.json: |
     {
-      "hcloudFloatingIPs": [
+      "hcloud_floating_ips": [
         "<hcloud-floating-ip>",
         "<hcloud-floating-ip>",
         ...
@@ -96,6 +96,6 @@ stringData:
 
 ## Multiple controller
 
-The controller can easiliy be installed multiple times, e.g. to handle
-IP-addresses which must only be routed through specific nodes. Just take
-care to redefine the `LEASE_NAME` variable per deployment.
+The controller can be installed multiple times, e.g. to handle IP-addresses
+which must only be routed through specific nodes. Take care to redefine the
+`LEASE_NAME` variable per deployment.
