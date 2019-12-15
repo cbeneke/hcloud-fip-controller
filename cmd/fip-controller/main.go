@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/namsral/flag"
+
 	"github.com/cbeneke/hcloud-fip-controller/internal/app/fipcontroller"
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 )
@@ -12,7 +14,29 @@ import (
 func main() {
 	controllerConfig := &configuration.Configuration{}
 
-	controllerConfig.ParseFlags()
+	// Parse flags
+	flag.Var(&controllerConfig.HcloudFloatingIPs, "hcloud-floating-ip", "Hetzner cloud floating IP Address. This option can be specified multiple times")
+
+	flag.StringVar(&controllerConfig.HcloudApiToken, "hcloud-api-token", "", "Hetzner cloud API token")
+	flag.IntVar(&controllerConfig.LeaseDuration, "lease-duration", 30, "Time to wait (in seconds) until next leader check")
+	flag.StringVar(&controllerConfig.LeaseName, "lease-name", "fip", "Name of the lease lock for leaderelection")
+	flag.StringVar(&controllerConfig.Namespace, "namespace", "", "Kubernetes Namespace")
+	flag.StringVar(&controllerConfig.NodeAddressType, "node-address-type", "external", "Kubernetes node address type")
+	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
+	flag.StringVar(&controllerConfig.PodName, "pod-name", "", "Kubernetes pod name")
+	flag.StringVar(&controllerConfig.LogLevel, "log-level", "Info", "Log level")
+
+	// Parse options from file
+	if _, err := os.Stat("config/config.json"); err == nil {
+		if err := controllerConfig.VarsFromFile("config/config.json"); err != nil {
+			fmt.Println(fmt.Errorf("could not parse controller config file: %v", err))
+			os.Exit(1)
+		}
+	}
+
+	// When default- and file-configs are read, parse command line options with highest priority
+	flag.Parse()
+
 
 	controller, err := fipcontroller.NewController(controllerConfig)
 	if err != nil {
