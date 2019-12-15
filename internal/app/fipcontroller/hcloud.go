@@ -3,11 +3,12 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
-	"github.com/hetznercloud/hcloud-go/hcloud"
 	"net"
+
+	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func hetznerClient(token string) (*hcloud.Client, error) {
+func newHetznerClient(token string) (*hcloud.Client, error) {
 	hetznerClient := hcloud.NewClient(hcloud.WithToken(token))
 	return hetznerClient, nil
 }
