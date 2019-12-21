@@ -94,6 +94,11 @@ stringData:
   HCLOUD_API_TOKEN: <hcloud_api_token>
 ```
 
+Alternatively, you can run the controller as a DaemonSet.
+This ensures one controller will run on each worker node.
+
+Instead of executing `$ kubectl applf -f deploy/deployment.yaml`, execute `$ kubectl applf -f deploy/daemonset.yaml`.
+
 ## Multiple controller
 
 The controller can be installed multiple times, e.g. to handle IP-addresses
