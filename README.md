@@ -68,7 +68,7 @@ commands
 ```
 $ kubectl create namespace fip-controller
 $ kubectl apply -f deploy/rbac.yaml
-$ kubectl applf -f deploy/deployment.yaml
+$ kubectl apply -f deploy/deployment.yaml
 $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
@@ -96,8 +96,7 @@ stringData:
 
 Alternatively, you can run the controller as a DaemonSet.
 This ensures one controller will run on each worker node.
-
-Instead of executing `$ kubectl applf -f deploy/deployment.yaml`, execute `$ kubectl applf -f deploy/daemonset.yaml`.
+Instead of executing `$ kubectl apply -f deploy/deployment.yaml`, execute `$ kubectl apply -f deploy/daemonset.yaml`.
 
 ## Multiple controller
 
