@@ -96,7 +96,7 @@ stringData:
 
 Alternatively, you can run the controller as a DaemonSet.
 This ensures one controller will run on each worker node.
-Instead of executing `$ kubectl apply -f deploy/deployment.yaml`, execute `$ kubectl apply -f deploy/daemonset.yaml`.
+Instead of executing `kubectl apply -f deploy/deployment.yaml`, execute `kubectl apply -f deploy/daemonset.yaml`.
 
 ## Multiple controller
 
