@@ -1,4 +1,7 @@
 version: 2.1
+machine:
+  environment:
+    SHA1_SHORT: $(echo $CIRCLE_SHA1 | cut -c -7)
 executors:
   docker-publisher:
     environment:
@@ -34,7 +37,9 @@ jobs:
         name: Publish Docker Image to Docker Hub
         command: |
           docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:$SHA1_SHORT
           docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:$SHA1_SHORT
   publish-tag:
     executor: docker-publisher
     steps:
