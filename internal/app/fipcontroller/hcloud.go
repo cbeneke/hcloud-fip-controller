@@ -39,8 +39,16 @@ func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hc
 	controller.Logger.Debugf("Fetched %s servers", len(servers))
 
 	for _, server := range servers {
+		// IP must not be a floating IP, but might be private or public depending on the cluster configuration
 		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
+			controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
 			return server, nil
+		}
+		for _, privateNet := range server.PrivateNet {
+			if privateNet.IP.Equal(ip) {
+				controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet.Network.Name, server.Name)
+				return server, nil
+			}
 		}
 	}
 	return nil, fmt.Errorf("no server with IP address %s found", ip.String())
