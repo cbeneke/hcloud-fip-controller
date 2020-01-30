@@ -1,3 +1,6 @@
+* v0.3.1
+  * Include internal Hetzner IPs in server to node matching (#25)
+
 * v0.3.0
   * Restructured project layout (no intended functional changes)
 
