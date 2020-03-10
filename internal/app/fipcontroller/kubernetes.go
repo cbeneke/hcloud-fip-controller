@@ -44,7 +44,7 @@ func (controller *Controller) nodeAddress(nodeName, nodeAddressType string) (add
 	if nodeAddressType == "internal" {
 		checkAddressType = corev1.NodeInternalIP
 	}
-	controller.Logger.Debugf("Using address type %s", checkAddressType)
+	controller.Logger.Debugf("Using address type '%s'", checkAddressType)
 
 	for _, address := range addresses {
 		if address.Type == checkAddressType {
