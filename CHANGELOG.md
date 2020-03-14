@@ -1,3 +1,6 @@
+* v0.3.2
+  * Fix parameter validation
+
 * v0.3.1
   * Include internal Hetzner IPs in server to node matching (#25)
 
