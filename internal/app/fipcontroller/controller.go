@@ -53,7 +53,10 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}, nil
 }
 
-
+/*
+ * Main threat.
+ *  Run update IP function once initially and every 30s afterwards
+ */
 func (controller *Controller) Run(ctx context.Context) error {
 	if err := controller.UpdateFloatingIPs(ctx); err != nil {
 		return err
@@ -73,6 +76,11 @@ func (controller *Controller) Run(ctx context.Context) error {
 	}
 }
 
+/*
+ * Main logical function.
+ *  Searches for the Hetzner Cloud Node object the pod is running on and validates that all configured floating IPs
+ *  are attached to that node.
+ */
 func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	controller.Logger.Debugf("Checking floating IPs")
 

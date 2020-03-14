@@ -13,6 +13,9 @@ func newHetznerClient(token string) (*hcloud.Client, error) {
 	return hetznerClient, nil
 }
 
+/*
+ * Search and return the hcloud floatingIP object for a given string representation of a IPv4 or IPv6 address
+ */
 func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) (ip *hcloud.FloatingIP, err error) {
 	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
 	if err != nil {
@@ -31,6 +34,10 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 	return nil, fmt.Errorf("IP address '%s' not allocated", ipAddress)
 }
 
+/*
+ * Search and return the hcloud Server object for a given IP address.
+ *  The IP Address can be a public IPv4, IPv6 address or a private address attached to any private network interface
+ */
 func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
 	servers, err := controller.HetznerClient.Server.All(ctx)
 	if err != nil {

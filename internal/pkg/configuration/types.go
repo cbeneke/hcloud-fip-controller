@@ -11,19 +11,35 @@ type Configuration struct {
 	LeaseDuration     int              `json:"lease_duration,omitempty"`
 	LeaseName         string           `json:"lease_name,omitempty"`
 	Namespace         string           `json:"namespace,omitempty"`
-	NodeAddressType   string           `json:"node_address_type,omitempty"`
+	NodeAddressType   NodeAddressType  `json:"node_address_type,omitempty"`
 	NodeName          string           `json:"node_name,omitempty"`
 	PodName           string           `json:"pod_name,omitempty"`
 	LogLevel          string           `json:"log_level,omitempty"`
 }
 
+// Set of string flags
 type stringArrayFlags []string
 
 func (flags *stringArrayFlags) String() string {
 	return fmt.Sprintf("['%s']", strings.Join(*flags, "', '"))
 }
-
 func (flags *stringArrayFlags) Set(value string) error {
 	*flags = append(*flags, value)
+	return nil
+}
+
+// Valid node address types
+type NodeAddressType string
+
+const (
+	NodeAddressTypeExternal = "external"
+	NodeAddressTypeInternal = "internal"
+)
+
+func (flags *NodeAddressType) String() string {
+	return string(*flags)
+}
+func (flags *NodeAddressType) Set(value string) error {
+	*flags = NodeAddressType(value)
 	return nil
 }
