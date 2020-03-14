@@ -5,3 +5,5 @@
 hcloud-fip-controller is a small controller, to handle floating IP management in a kubernetes cluster on hetzner cloud virtual machines.
 
 Please refer to the [docs](docs/README.md) for further information.
+
+This controller is still under development and may introduce breaking changes between versions. Please check the [CHANGELOG](CHANGELOG.md) before updating!
