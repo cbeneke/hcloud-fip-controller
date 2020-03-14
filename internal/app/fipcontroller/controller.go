@@ -21,6 +21,11 @@ type Controller struct {
 }
 
 func NewController(config *configuration.Configuration) (*Controller, error) {
+	// Validate controller config
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("controller config invalid: %v", err)
+	}
+
 	hetznerClient, err := newHetznerClient(config.HcloudApiToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise hetzner client: %v", err)
