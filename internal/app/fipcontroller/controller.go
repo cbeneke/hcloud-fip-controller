@@ -109,13 +109,22 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		controller.Logger.Debugf("Checking floating IP: %s", floatingIP.IP.String())
 
 		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
-			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
-			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			controller.Logger.Infof("Unassigning address '%s'", floatingIP.IP.String())
+			_, response, err := controller.HetznerClient.FloatingIP.Unassign(ctx, floatingIP)
 			if err != nil {
-				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)
+				return fmt.Errorf("could not unassign floating IP '%s': %v", floatingIP.IP.String(), err)
 			}
 			if response.StatusCode != 201 {
-				return fmt.Errorf("could not update floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
+				return fmt.Errorf("could not unassign floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
+			}
+
+			controller.Logger.Infof("Assigning address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
+			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			if err != nil {
+				return fmt.Errorf("could not assign floating IP '%s': %v", floatingIP.IP.String(), err)
+			}
+			if response.StatusCode != 201 {
+				return fmt.Errorf("could not assign floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
 			}
 		}
 	}

@@ -1,3 +1,6 @@
+* v0.3.3
+  * Fix race condition when reassigning IPs to another node resulting in the IPs becoming unreachable
+
 * v0.3.2
   * Fix parameter validation
 
