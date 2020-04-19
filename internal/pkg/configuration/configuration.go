@@ -34,9 +34,6 @@ func (config *Configuration) Validate() error {
 	if config.HcloudApiToken == "" {
 		undefinedErrs = append(errs, "hetzner cloud API token")
 	}
-	if len(config.HcloudFloatingIPs) <= 0 {
-		undefinedErrs = append(errs, "hetzner cloud floating IPs")
-	}
 	if config.NodeName == "" {
 		undefinedErrs = append(errs, "kubernetes node name")
 	}
