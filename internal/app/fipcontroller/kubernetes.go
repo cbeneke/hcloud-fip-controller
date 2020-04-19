@@ -52,13 +52,11 @@ func (controller *Controller) nodeAddressList(nodeAddressType configuration.Node
 		}
 		controller.Logger.Debugf("Using address type '%s' for node %s", checkAddressType, node.Name)
 
-		for _, address := range addresses {
-			if address.Type == checkAddressType {
-				addressList = append(addressList, net.ParseIP(address.Address))
-				break
-			}
+		address := searchForAddress(addresses, checkAddressType)
+		if address == nil {
+			fmt.Errorf("cloud not find address for node %s", node.Name)
 		}
-		// TODO: check nothing found
+		addressList = append(addressList, address)
 	}
 	return
 }
@@ -73,4 +71,13 @@ func isNodeHealthy(node corev1.Node) bool {
 		}
 	}
 	return false
+}
+
+func searchForAddress(addresses []corev1.NodeAddress, checkAddressType corev1.NodeAddressType) net.IP {
+	for _, address := range addresses {
+		if address.Type == checkAddressType {
+			return net.ParseIP(address.Address)
+		}
+	}
+	return nil
 }

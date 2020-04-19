@@ -59,12 +59,16 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 				serverList = append(serverList, server)
 				break
 			}
-			// TODO: what if noting found for server?
+			return nil, fmt.Errorf("Could not find an IP for server '%s'", server.Name)
 		}
 	}
 	return serverList, nil
 }
 
+/*
+ * Search for a specified ip in the given privateNet of a server.
+ * Return the network name if a network has been found and an empty string otherwise
+ */
 func searchPrivateNet(privateNet []hcloud.ServerPrivateNet, ip net.IP) string {
 	for _, privateNet := range privateNet {
 		if privateNet.IP.Equal(ip) {
