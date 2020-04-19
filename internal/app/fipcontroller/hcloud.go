@@ -35,28 +35,41 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 }
 
 /*
- * Search and return the hcloud Server object for a given IP address.
- *  The IP Address can be a public IPv4, IPv6 address or a private address attached to any private network interface
+ * Search and return the hcloud Server objects for a given list of IP addresses.
+ *  The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
  */
-func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
+func (controller *Controller) servers(ctx context.Context, ips []net.IP) (serverList []*hcloud.Server, err error) {
 	servers, err := controller.HetznerClient.Server.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
 	}
 	controller.Logger.Debugf("Fetched %d servers", len(servers))
 
-	for _, server := range servers {
-		// IP must not be a floating IP, but might be private or public depending on the cluster configuration
-		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
-			controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
-			return server, nil
-		}
-		for _, privateNet := range server.PrivateNet {
-			if privateNet.IP.Equal(ip) {
-				controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet.Network.Name, server.Name)
-				return server, nil
+	for _, ip := range ips {
+		for _, server := range servers {
+			// IP must not be a floating IP, but might be private or public depending on the cluster configuration
+			if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
+				controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
+				serverList = append(serverList, server)
+				break
 			}
+			privateNet := searchPrivateNet(server.PrivateNet, ip)
+			if privateNet != "" {
+				controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet, server.Name)
+				serverList = append(serverList, server)
+				break
+			}
+			// TODO: what if noting found for server?
 		}
 	}
-	return nil, fmt.Errorf("no server with IP address %s found", ip.String())
+	return serverList, nil
+}
+
+func searchPrivateNet(privateNet []hcloud.ServerPrivateNet, ip net.IP) string {
+	for _, privateNet := range privateNet {
+		if privateNet.IP.Equal(ip) {
+			return privateNet.Network.Name
+		}
+	}
+	return ""
 }

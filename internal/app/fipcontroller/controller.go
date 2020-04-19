@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -82,33 +83,50 @@ func (controller *Controller) Run(ctx context.Context) error {
 }
 
 /*
- * Main logical function.
- *  Searches for the Hetzner Cloud Node object the pod is running on and validates that all configured floating IPs
- *  are attached to that node.
+ * Main logic function.
+ *  Searches for running hetzner cloud servers and sort them by fewest assigned floating ips.
+ *  It then (re)assigns all unassigned ips or ips that are assigned to non running servers to the sorted running serves.
+ *
  */
 func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	controller.Logger.Debugf("Checking floating IPs")
 
-	nodeAddress, err := controller.nodeAddress(controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
+	// Get running servers for floating ip assignment
+	nodeAddressList, err := controller.nodeAddressList(controller.Configuration.NodeAddressType)
 	if err != nil {
-		return fmt.Errorf("could not get kubernetes node address: %v", err)
+		return fmt.Errorf("could not get addressList for active kubernetes Nodes")
 	}
-	controller.Logger.Debugf("Found node address: %s", nodeAddress.String())
 
-	server, err := controller.server(ctx, nodeAddress)
+	runningServers, err := controller.servers(ctx, nodeAddressList)
 	if err != nil {
-		return fmt.Errorf("could not get configured server: %v", err)
+		return fmt.Errorf("Could not get server objects for addressList")
 	}
-	controller.Logger.Debugf("Found server: %s (%d)", server.Name, server.ID)
 
-	for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
-		floatingIP, err := controller.floatingIP(ctx, floatingIPAddr)
-		if err != nil {
-			return fmt.Errorf("could not get floating IP '%s': %v", floatingIPAddr, err)
-		}
+	// Sort servers by number of assigned public ips
+	sort.Slice(runningServers, func(i, j int) bool {
+		return len(runningServers[i].PublicNet.FloatingIPs) < len(runningServers[j].PublicNet.FloatingIPs)
+	})
+
+	// Get floatingIPs from config if specified, otherwise from hetzner api
+	floatingIPs, err := controller.getFloatingIPs(ctx)
+	if err != nil {
+		return fmt.Errorf("Could not get floatingIPs: %v", err)
+	}
+	// Next server to apply a floating ip to
+	currentServer := 0
+
+	for _, floatingIP := range floatingIPs {
 		controller.Logger.Debugf("Checking floating IP: %s", floatingIP.IP.String())
 
-		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
+		// (Re)assign floatingIP if no server is assigned or the assigned server is not running
+		// Since we already have all running server in a slice we can just search through it
+		if floatingIP.Server == nil || !findServerByID(runningServers, floatingIP.Server) {
+			// Pop first element from slice (https://github.com/golang/go/wiki/SliceTricks)
+			// This should keep the floatingIPs fairly equally distributed
+			// Sorting after every (re)assignment could give a slightly better distribution but would be more computing intensive
+			var server *hcloud.Server
+			server = runningServers[currentServer]
+
 			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
 			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
 			if err != nil {
@@ -117,8 +135,54 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			if response.StatusCode != 201 {
 				return fmt.Errorf("could not update floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
 			}
+			currentServer = (currentServer + 1) % len(runningServers)
+		}
+
+	}
+	return nil
+}
+
+/*
+ * Find a server in a slice by its id
+ * Returns a fully filled server struct if a server was found
+ */
+func findServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
+	for _, item := range slice {
+		if item.ID == val.ID {
+			return true
 		}
 	}
+	return false
+}
 
-	return nil
+/*
+ * Fetches all floatingIPs from hetzner api with optional label selector.
+ * For backwards compatibility this still uses hardcoded ips if specified in config
+ */
+func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.FloatingIP, error) {
+	// Use hardcoded ips if specified
+	if len(controller.Configuration.HcloudFloatingIPs) > 0 {
+		floatingIPs := []*hcloud.FloatingIP{}
+		for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
+			floatingIP, err := controller.floatingIP(ctx, floatingIPAddr)
+			if err != nil {
+				return nil, fmt.Errorf("could not get floating IP '%s': %v", floatingIPAddr, err)
+			}
+			floatingIPs = append(floatingIPs, floatingIP)
+		}
+		return floatingIPs, nil
+	}
+
+	// Fetch ips from hetzner api with optional LabelSelector
+	floatingIPListOpts := hcloud.FloatingIPListOpts{}
+	if controller.Configuration.FloatingIPsLabelSelector != "" {
+		listOpts := hcloud.ListOpts{}
+		listOpts.LabelSelector = controller.Configuration.FloatingIPsLabelSelector
+		floatingIPListOpts = hcloud.FloatingIPListOpts{ListOpts: listOpts}
+	}
+	floatingIPs, err := controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
+	if err != nil {
+		return floatingIPs, fmt.Errorf("could not get floating Ips")
+	}
+	return floatingIPs, nil
 }

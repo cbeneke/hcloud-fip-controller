@@ -2,8 +2,9 @@ package fipcontroller
 
 import (
 	"fmt"
-	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 	"net"
+
+	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,32 +30,47 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
  * Search and return the IP address of a given kubernetes node name.
  *  Will return first found internal or external IP depending on nodeAddressType parameter
  */
-func (controller *Controller) nodeAddress(nodeName string, nodeAddressType configuration.NodeAddressType) (address net.IP, err error) {
+func (controller *Controller) nodeAddressList(nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
 	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
 	controller.Logger.Debugf("Found %d nodes", len(nodes.Items))
 
-	var addresses []corev1.NodeAddress
 	for _, node := range nodes.Items {
-		if node.Name == nodeName {
-			addresses = node.Status.Addresses
-			break
+		// Skip unhealthy nodes
+		if !isNodeHealthy(node) {
+			continue
+		}
+
+		addresses := node.Status.Addresses
+		controller.Logger.Debugf("Found %d addresses for node %s", len(addresses), node.Name)
+
+		checkAddressType := corev1.NodeExternalIP
+		if nodeAddressType == configuration.NodeAddressTypeInternal {
+			checkAddressType = corev1.NodeInternalIP
+		}
+		controller.Logger.Debugf("Using address type '%s' for node %s", checkAddressType, node.Name)
+
+		for _, address := range addresses {
+			if address.Type == checkAddressType {
+				addressList = append(addressList, net.ParseIP(address.Address))
+				break
+			}
+		}
+		// TODO: check nothing found
+	}
+	return
+}
+
+/*
+ * Check if node is healthy
+ */
+func isNodeHealthy(node corev1.Node) bool {
+	for _, condition := range node.Status.Conditions {
+		if condition.Type == corev1.NodeReady {
+			return condition.Status == corev1.ConditionTrue
 		}
 	}
-	controller.Logger.Debugf("Found %d addresses", len(addresses))
-
-	checkAddressType := corev1.NodeExternalIP
-	if nodeAddressType == configuration.NodeAddressTypeInternal {
-		checkAddressType = corev1.NodeInternalIP
-	}
-	controller.Logger.Debugf("Using address type '%s'", checkAddressType)
-
-	for _, address := range addresses {
-		if address.Type == checkAddressType {
-			return net.ParseIP(address.Address), nil
-		}
-	}
-	return nil, fmt.Errorf("could not find address for node %s", nodeName)
+	return false
 }
