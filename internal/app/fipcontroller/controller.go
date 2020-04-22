@@ -89,7 +89,7 @@ func (controller *Controller) Run(ctx context.Context) error {
 func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	controller.Logger.Debugf("Checking floating IPs")
 
-	nodeAddress, err := controller.nodeAddress(controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
+	nodeAddress, err := controller.nodeAddress(ctx, controller.Configuration.NodeName, controller.Configuration.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get kubernetes node address: %v", err)
 	}
