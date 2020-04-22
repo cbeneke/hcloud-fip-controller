@@ -1,3 +1,6 @@
+* v0.3.3
+  * Fix nilpointer deref on kubernetes v1.18.2 (#38)
+
 * v0.3.2
   * Fix parameter validation
 
