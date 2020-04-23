@@ -173,9 +173,9 @@ func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.Flo
 
 	// Fetch ips from hetzner api with optional LabelSelector
 	floatingIPListOpts := hcloud.FloatingIPListOpts{}
-	if controller.Configuration.FloatingIPsLabelSelector != "" {
+	if controller.Configuration.FloatingIPLabelSelector != "" {
 		listOpts := hcloud.ListOpts{}
-		listOpts.LabelSelector = controller.Configuration.FloatingIPsLabelSelector
+		listOpts.LabelSelector = controller.Configuration.FloatingIPLabelSelector
 		floatingIPListOpts = hcloud.FloatingIPListOpts{ListOpts: listOpts}
 	}
 

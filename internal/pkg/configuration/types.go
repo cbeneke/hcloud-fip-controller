@@ -6,16 +6,17 @@ import (
 )
 
 type Configuration struct {
-	HcloudApiToken           string           `json:"hcloud_api_token,omitempty"`
-	HcloudFloatingIPs        stringArrayFlags `json:"hcloud_floating_ips,omitempty"`
-	LeaseDuration            int              `json:"lease_duration,omitempty"`
-	LeaseName                string           `json:"lease_name,omitempty"`
-	Namespace                string           `json:"namespace,omitempty"`
-	NodeAddressType          NodeAddressType  `json:"node_address_type,omitempty"`
-	NodeName                 string           `json:"node_name,omitempty"`
-	PodName                  string           `json:"pod_name,omitempty"`
-	LogLevel                 string           `json:"log_level,omitempty"`
-	FloatingIPsLabelSelector string           `json:"label_selector,omitempty"`
+	HcloudApiToken          string           `json:"hcloud_api_token,omitempty"`
+	HcloudFloatingIPs       stringArrayFlags `json:"hcloud_floating_ips,omitempty"`
+	LeaseDuration           int              `json:"lease_duration,omitempty"`
+	LeaseName               string           `json:"lease_name,omitempty"`
+	Namespace               string           `json:"namespace,omitempty"`
+	NodeAddressType         NodeAddressType  `json:"node_address_type,omitempty"`
+	NodeLabelSelector       string           `json:"node_label_selector,omitempty"`
+	NodeName                string           `json:"node_name,omitempty"`
+	PodName                 string           `json:"pod_name,omitempty"`
+	LogLevel                string           `json:"log_level,omitempty"`
+	FloatingIPLabelSelector string           `json:"floating_ip_label_selector,omitempty"`
 }
 
 // Set of string flags

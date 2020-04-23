@@ -28,7 +28,8 @@ func main() {
 	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
 	flag.StringVar(&controllerConfig.PodName, "pod-name", "", "Kubernetes pod name")
 	flag.StringVar(&controllerConfig.LogLevel, "log-level", "Info", "Log level")
-	flag.StringVar(&controllerConfig.FloatingIPsLabelSelector, "label-selector", "", "Selector for Floating IPs")
+	flag.StringVar(&controllerConfig.FloatingIPLabelSelector, "floating-ips-label-selector", "", "Selector for Floating IPs")
+	flag.StringVar(&controllerConfig.NodeLabelSelector, "node-label-selector", "", "Selector for Nodes")
 
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {

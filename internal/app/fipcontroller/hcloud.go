@@ -39,6 +39,7 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
  *  The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
  */
 func (controller *Controller) servers(ctx context.Context, ips []net.IP) (serverList []*hcloud.Server, err error) {
+	// Fetch all hetzner servers
 	servers, err := controller.HetznerClient.Server.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
@@ -53,12 +54,14 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 				serverList = append(serverList, server)
 				break
 			}
+
 			privateNet := searchPrivateNet(server.PrivateNet, ip)
 			if privateNet != "" {
 				controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet, server.Name)
 				serverList = append(serverList, server)
 				break
 			}
+
 			return nil, fmt.Errorf("Could not find an IP for server '%s'", server.Name)
 		}
 	}
