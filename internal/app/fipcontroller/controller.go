@@ -124,6 +124,8 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			if response.StatusCode != 201 {
 				return fmt.Errorf("could not update floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
 			}
+			// Add placeholder floating ip to server so that findServerWithLowestFIP will always get a correct server
+			server.PublicNet.FloatingIPs = append(server.PublicNet.FloatingIPs, &hcloud.FloatingIP{})
 		}
 
 	}
