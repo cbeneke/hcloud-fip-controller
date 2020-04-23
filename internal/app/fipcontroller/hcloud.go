@@ -47,25 +47,35 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 	controller.Logger.Debugf("Fetched %d servers", len(servers))
 
 	for _, ip := range ips {
-		for _, server := range servers {
-			// IP must not be a floating IP, but might be private or public depending on the cluster configuration
-			if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
-				controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
-				serverList = append(serverList, server)
-				break
-			}
-
-			privateNet := searchPrivateNet(server.PrivateNet, ip)
-			if privateNet != "" {
-				controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet, server.Name)
-				serverList = append(serverList, server)
-				break
-			}
-
-			return nil, fmt.Errorf("Could not find an IP for server '%s'", server.Name)
+		// check if a server was found for the given ip, if not throw error
+		server := controller.searchServerForIP(servers, ip)
+		if server == nil {
+			return nil, fmt.Errorf("Could not find an a server for ip '%s'", ip)
 		}
+		serverList = append(serverList, server)
 	}
 	return serverList, nil
+}
+
+/*
+ * Search for a hetzner Server that has the give ip in any of its networks
+ */
+func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net.IP) *hcloud.Server {
+	for _, server := range servers {
+		// IP must not be a floating IP, but might be private or public depending on the cluster configuration
+		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
+			controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
+			return server
+		}
+
+		privateNet := searchPrivateNet(server.PrivateNet, ip)
+		if privateNet != "" {
+			controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet, server.Name)
+			return server
+		}
+
+	}
+	return nil
 }
 
 /*
