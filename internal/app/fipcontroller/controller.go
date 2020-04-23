@@ -94,12 +94,12 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	// Get running servers for floating ip assignment
 	nodeAddressList, err := controller.nodeAddressList(controller.Configuration.NodeAddressType)
 	if err != nil {
-		return fmt.Errorf("could not get addressList for active kubernetes Nodes")
+		return fmt.Errorf("could not get addressList for active kubernetes nodes: %v", err)
 	}
 
 	runningServers, err := controller.servers(ctx, nodeAddressList)
 	if err != nil {
-		return fmt.Errorf("Could not get server objects for addressList")
+		return fmt.Errorf("Could not get server objects for addressList: %v", err)
 	}
 
 	// Sort servers by number of assigned public ips
