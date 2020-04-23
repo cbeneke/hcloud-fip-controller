@@ -151,37 +151,3 @@ func findServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
 	}
 	return false
 }
-
-/*
- * Fetches all floatingIPs from hetzner api with optional label selector.
- * For backwards compatibility this still uses hardcoded ips if specified in config
- */
-func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.FloatingIP, error) {
-	// Use hardcoded ips if specified
-	// TODO fetch FloatingIPs once beforehand (maybe????)
-	if len(controller.Configuration.HcloudFloatingIPs) > 0 {
-		floatingIPs := []*hcloud.FloatingIP{}
-		for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
-			floatingIP, err := controller.floatingIP(ctx, floatingIPAddr)
-			if err != nil {
-				return nil, fmt.Errorf("could not get floating IP '%s': %v", floatingIPAddr, err)
-			}
-			floatingIPs = append(floatingIPs, floatingIP)
-		}
-		return floatingIPs, nil
-	}
-
-	// Fetch ips from hetzner api with optional LabelSelector
-	floatingIPListOpts := hcloud.FloatingIPListOpts{}
-	if controller.Configuration.FloatingIPLabelSelector != "" {
-		listOpts := hcloud.ListOpts{}
-		listOpts.LabelSelector = controller.Configuration.FloatingIPLabelSelector
-		floatingIPListOpts = hcloud.FloatingIPListOpts{ListOpts: listOpts}
-	}
-
-	floatingIPs, err := controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
-	if err != nil {
-		return floatingIPs, fmt.Errorf("could not get floating IPs: %v", err)
-	}
-	return floatingIPs, nil
-}
