@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -102,18 +101,11 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		return fmt.Errorf("Could not get server objects for addressList: %v", err)
 	}
 
-	// Sort servers by number of assigned public ips
-	sort.Slice(runningServers, func(i, j int) bool {
-		return len(runningServers[i].PublicNet.FloatingIPs) < len(runningServers[j].PublicNet.FloatingIPs)
-	})
-
 	// Get floatingIPs from config if specified, otherwise from hetzner api
 	floatingIPs, err := controller.getFloatingIPs(ctx)
 	if err != nil {
 		return fmt.Errorf("Could not get floatingIPs: %v", err)
 	}
-	// Next server to apply a floating ip to
-	currentServer := 0
 
 	for _, floatingIP := range floatingIPs {
 		controller.Logger.Debugf("Checking floating IP: %s", floatingIP.IP.String())
@@ -121,8 +113,8 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		// (Re)assign floatingIP if no server is assigned or the assigned server is not running
 		// Since we already have all running server in a slice we can just search through it
 		if floatingIP.Server == nil || !findServerByID(runningServers, floatingIP.Server) {
-			var server *hcloud.Server
-			server = runningServers[currentServer]
+			// Get the server with the lowest amount of fips (cant be nil since we know that servers can't be empty)
+			server := findServerWithLowestFIP(runningServers)
 
 			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
 			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
@@ -132,11 +124,26 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			if response.StatusCode != 201 {
 				return fmt.Errorf("could not update floating IP '%s': Got HTTP Code %d, expected 201", floatingIP.IP.String(), response.StatusCode)
 			}
-			currentServer = (currentServer + 1) % len(runningServers)
 		}
 
 	}
 	return nil
+}
+
+/*
+ * Find the server with the lowest amount of floating IPs
+ */
+func findServerWithLowestFIP(servers []*hcloud.Server) *hcloud.Server {
+	if len(servers) < 1 {
+		return nil
+	}
+	server := servers[0]
+	for _, s := range servers {
+		if len(s.PublicNet.FloatingIPs) < len(server.PublicNet.FloatingIPs) {
+			server = s
+		}
+	}
+	return server
 }
 
 /*
