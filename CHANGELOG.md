@@ -1,3 +1,6 @@
+* v0.3.3
+  * Fix nilpointer deref on kubernetes v1.18.2 (#38)
+
 * v0.3.2
   * Fix parameter validation
 
@@ -12,7 +15,7 @@
 
 * v0.2.0
   * Added minimal logging
-  * config.json options switched from camelCase to snake_case
+  * **IMPORTANT** config.json options switched from camelCase to snake_case
 
 * v0.1.0
   * Initial preview release

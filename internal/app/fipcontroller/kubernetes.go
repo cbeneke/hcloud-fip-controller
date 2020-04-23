@@ -1,6 +1,7 @@
 package fipcontroller
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -30,14 +31,14 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
  * Search and return the IP address of a given kubernetes node name.
  *  Will return first found internal or external IP depending on nodeAddressType parameter
  */
-func (controller *Controller) nodeAddressList(nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
+func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
 	// Create list options with optional labelSelector
 	listOptions := metav1.ListOptions{}
 	if controller.Configuration.NodeLabelSelector != "" {
 		listOptions.LabelSelector = controller.Configuration.NodeLabelSelector
 	}
 
-	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(listOptions)
+	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, listOptions)
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}

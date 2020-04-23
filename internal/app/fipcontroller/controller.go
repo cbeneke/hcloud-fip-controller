@@ -92,7 +92,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	controller.Logger.Debugf("Checking floating IPs")
 
 	// Get running servers for floating ip assignment
-	nodeAddressList, err := controller.nodeAddressList(controller.Configuration.NodeAddressType)
+	nodeAddressList, err := controller.nodeAddressList(ctx, controller.Configuration.NodeAddressType)
 	if err != nil {
 		return fmt.Errorf("could not get addressList for active kubernetes nodes: %v", err)
 	}

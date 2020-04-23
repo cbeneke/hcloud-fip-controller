@@ -43,7 +43,7 @@ func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 	leaderelection.RunOrDie(ctx, controller.leaderElectionConfig())
 
 	// because the context is closed, the client should report errors
-	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(controller.Configuration.LeaseName, metav1.GetOptions{})
+	_, err := controller.KubernetesClient.CoordinationV1().Leases(controller.Configuration.Namespace).Get(ctx, controller.Configuration.LeaseName, metav1.GetOptions{})
 	if err == nil || !strings.Contains(err.Error(), "the leader is shutting down") {
 		controller.Logger.Fatalf("Expected to get an error when trying to make a client call: %v", err)
 	}
@@ -60,4 +60,3 @@ func (controller *Controller) onStartedLeading(ctx context.Context) {
 func (controller *Controller) onStoppedLeading() {
 	controller.Logger.Info("Stopped leading")
 }
-
