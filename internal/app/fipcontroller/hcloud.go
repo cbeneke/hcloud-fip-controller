@@ -120,7 +120,7 @@ func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.Flo
 
 	floatingIPs, err := controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
 	if err != nil {
-		return floatingIPs, fmt.Errorf("could not get floating IPs: %v", err)
+		return nil, fmt.Errorf("could not get floating IPs: %v", err)
 	}
 	return floatingIPs, nil
 }
