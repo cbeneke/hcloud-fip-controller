@@ -121,9 +121,6 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		// (Re)assign floatingIP if no server is assigned or the assigned server is not running
 		// Since we already have all running server in a slice we can just search through it
 		if floatingIP.Server == nil || !findServerByID(runningServers, floatingIP.Server) {
-			// Pop first element from slice (https://github.com/golang/go/wiki/SliceTricks)
-			// This should keep the floatingIPs fairly equally distributed
-			// Sorting after every (re)assignment could give a slightly better distribution but would be more computing intensive
 			var server *hcloud.Server
 			server = runningServers[currentServer]
 
@@ -161,6 +158,7 @@ func findServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
  */
 func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.FloatingIP, error) {
 	// Use hardcoded ips if specified
+	// TODO fetch FloatingIPs once beforehand (maybe????)
 	if len(controller.Configuration.HcloudFloatingIPs) > 0 {
 		floatingIPs := []*hcloud.FloatingIP{}
 		for _, floatingIPAddr := range controller.Configuration.HcloudFloatingIPs {
@@ -180,9 +178,10 @@ func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.Flo
 		listOpts.LabelSelector = controller.Configuration.FloatingIPsLabelSelector
 		floatingIPListOpts = hcloud.FloatingIPListOpts{ListOpts: listOpts}
 	}
+
 	floatingIPs, err := controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
 	if err != nil {
-		return floatingIPs, fmt.Errorf("could not get floating Ips")
+		return floatingIPs, fmt.Errorf("could not get floating IPs: %v", err)
 	}
 	return floatingIPs, nil
 }
