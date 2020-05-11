@@ -25,11 +25,18 @@ Log level of the controller.
 * NODE_ADDRESS_TYPE, *default:* "external"  
 Address type of the nodes. This might be set to internal, if your external IPs are  registered as internal IPs on the node objects (e.g. if you have no cloud controller manager). Can be "external" or "internal".
 
+* NODE_LABEL_SELECTOR
+Optionally restrict the searched nodes to assign floating ips to by a label selector.
+
 * NODE_NAME  
 Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 
 * NAMESPACE  
 Namespace the pod is running in. Should be invoked via fieldRef to metadata.namespace
+
+* POD_LABEL_SELECTOR, *defailt:* hcloud-fipcontroller
+Labels selector to find deployment pods with. This should be the same value as used in the deployment.
+Can be ignored if no label was specified.
 
 * POD_NAME  
 Name of the pod. Should be invoked via fieldRef to metadata.name
@@ -49,7 +56,9 @@ Valid fields in the config.json file and their respective ENV variables are
   "log_level": "<LOG_LEVEL>",
   "namespace": "<NAMESPACE>",
   "node_address_type": "<NODE_ADDRESS_TYPE>",
+  "node_label_selector": "<NODE_LABEL_SELECTOR>",
   "node_name": "<NODE_NAME>",
+  "pod_label_selector": "<POD_LABEL_SELECTOR>",
   "pod_name": "<POD_NAME>"
 }
 ```
