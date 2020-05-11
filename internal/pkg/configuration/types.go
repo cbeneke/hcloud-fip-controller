@@ -13,6 +13,7 @@ type Configuration struct {
 	Namespace               string           `json:"namespace,omitempty"`
 	NodeAddressType         NodeAddressType  `json:"node_address_type,omitempty"`
 	NodeLabelSelector       string           `json:"node_label_selector,omitempty"`
+	PodLabelSelector        string           `json:"pod_label_selector,omitempty"`
 	NodeName                string           `json:"node_name,omitempty"`
 	PodName                 string           `json:"pod_name,omitempty"`
 	LogLevel                string           `json:"log_level,omitempty"`
