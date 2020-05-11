@@ -68,8 +68,8 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net
 			return server
 		}
 
-		privateNet := searchPrivateNet(server.PrivateNet, ip)
-		if privateNet != "" {
+		privateNet := controller.searchPrivateNet(server.PrivateNet, ip)
+		if !privateNet {
 			controller.Logger.Debugf("Found matching private IP on network '%s' for server '%s'", privateNet, server.Name)
 			return server
 		}
@@ -82,13 +82,13 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net
  * Search for a specified ip in the given privateNet of a server.
  * Return the network name if a network has been found and an empty string otherwise
  */
-func searchPrivateNet(privateNet []hcloud.ServerPrivateNet, ip net.IP) string {
-	for _, privateNet := range privateNet {
+func (controller *Controller) searchPrivateNet(privateNets []hcloud.ServerPrivateNet, ip net.IP) bool {
+	for _, privateNet := range privateNets {
 		if privateNet.IP.Equal(ip) {
-			return privateNet.Network.Name
+			return true
 		}
 	}
-	return ""
+	return false
 }
 
 /*
