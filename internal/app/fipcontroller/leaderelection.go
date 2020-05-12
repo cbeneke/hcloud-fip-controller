@@ -39,6 +39,7 @@ func (controller *Controller) leaderElectionConfig() (config leaderelection.Lead
 	return
 }
 
+// RunWithLeaderElection starts a leaderelection and will run the main logic when it becomes the leader
 func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 	leaderelection.RunOrDie(ctx, controller.leaderElectionConfig())
 

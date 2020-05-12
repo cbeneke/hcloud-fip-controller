@@ -80,7 +80,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 
 		address := searchForAddress(addresses, checkAddressType)
 		if address == nil {
-			fmt.Errorf("cloud not find address for node %s", node.Name)
+			return nil, fmt.Errorf("coud not find address for node %s", node.Name)
 		}
 		addressList = append(addressList, address)
 	}

@@ -13,6 +13,8 @@ import (
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 )
 
+// Controller is the main struct used for all other functions in this package.
+// Holds all client configurations and loggers
 type Controller struct {
 	HetznerClient    *hcloud.Client
 	KubernetesClient *kubernetes.Clientset
@@ -20,13 +22,14 @@ type Controller struct {
 	Logger           *logrus.Logger
 }
 
+// NewController creates a new Controller and with it the client configurations and loggers
 func NewController(config *configuration.Configuration) (*Controller, error) {
 	// Validate controller config
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("controller config invalid: %v", err)
 	}
 
-	hetznerClient, err := newHetznerClient(config.HcloudApiToken)
+	hetznerClient, err := newHetznerClient(config.HcloudAPIToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise hetzner client: %v", err)
 	}
@@ -58,10 +61,7 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}, nil
 }
 
-/*
- * Main threat.
- *  Run update IP function once initially and every 30s afterwards
- */
+// Run update IP function once initially and every 30s afterwards
 func (controller *Controller) Run(ctx context.Context) error {
 	if err := controller.UpdateFloatingIPs(ctx); err != nil {
 		return err
@@ -81,12 +81,8 @@ func (controller *Controller) Run(ctx context.Context) error {
 	}
 }
 
-/*
- * Main logic function.
- *  Searches for running hetzner cloud servers and sort them by fewest assigned floating ips.
- *  It then (re)assigns all unassigned ips or ips that are assigned to non running servers to the sorted running serves.
- *
- */
+// UpdateFloatingIPs searches for running hetzner cloud servers and sort them by fewest assigned floating ips.
+// It then (re)assigns all unassigned ips or ips that are assigned to non running servers to the sorted running serves.
 func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	controller.Logger.Debugf("Checking floating IPs")
 
