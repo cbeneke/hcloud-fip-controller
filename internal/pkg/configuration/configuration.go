@@ -48,7 +48,7 @@ func (config *Configuration) Validate() error {
 	}
 
 	if len(undefinedErrs) > 0 {
-		errs = append(errs, fmt.Sprintf("required configuration options not configured: %s", strings.Join(errs, ", ")))
+		errs = append(errs, fmt.Sprintf("required configuration options not configured: %s", strings.Join(undefinedErrs, ", ")))
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("%s", strings.Join(errs, ", "))
