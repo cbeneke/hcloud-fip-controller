@@ -58,7 +58,7 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 }
 
 /*
- * Search for a hetzner Server that has the give ip in any of its networks
+ * Search for a hetzner Server that has the given ip in any of its networks
  */
 func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net.IP) *hcloud.Server {
 	for _, server := range servers {
@@ -68,7 +68,12 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net
 			return server
 		}
 
-		privateNet := controller.searchPrivateNet(server.PrivateNet, ip)
+		privateNet := false
+		for _, privateNet := range privateNets {
+			if privateNet.IP.Equal(ip) {
+				privateNet = true
+			}
+		}
 		if privateNet {
 			controller.Logger.Debugf("Found matching private IP for server '%s'", server.Name)
 			return server
@@ -83,12 +88,6 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net
  * Return the network name if a network has been found and an empty string otherwise
  */
 func (controller *Controller) searchPrivateNet(privateNets []hcloud.ServerPrivateNet, ip net.IP) bool {
-	for _, privateNet := range privateNets {
-		if privateNet.IP.Equal(ip) {
-			return true
-		}
-	}
-	return false
 }
 
 /*
