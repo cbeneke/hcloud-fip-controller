@@ -108,7 +108,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 
 		// (Re)assign floatingIP if no server is assigned or the assigned server is not running
 		// Since we already have all running server in a slice we can just search through it
-		if floatingIP.Server == nil || !findServerByID(runningServers, floatingIP.Server) {
+		if floatingIP.Server == nil || !hasServerByID(runningServers, floatingIP.Server) {
 			// Get the server with the lowest amount of fips (cant be nil since we know that servers can't be empty)
 			server := findServerWithLowestFIP(runningServers)
 
@@ -145,10 +145,10 @@ func findServerWithLowestFIP(servers []*hcloud.Server) *hcloud.Server {
 }
 
 /*
- * Find a server in a slice by its id
- * Returns a fully filled server struct if a server was found
+ * Checks for a server in a slice by its id
+ * Returns true the server was found
  */
-func findServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
+func hasServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
 	for _, item := range slice {
 		if item.ID == val.ID {
 			return true
