@@ -1,3 +1,6 @@
+* v0.3.4
+  * Fix error message outPut for undefined options (#46)
+  
 * v0.3.3
   * Fix nilpointer deref on kubernetes v1.18.2 (#38)
 
