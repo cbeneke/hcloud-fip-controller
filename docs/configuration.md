@@ -34,7 +34,7 @@ Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 * NAMESPACE  
 Namespace the pod is running in. Should be invoked via fieldRef to metadata.namespace
 
-* POD_LABEL_SELECTOR, *defailt:* hcloud-fipcontroller
+* POD_LABEL_SELECTOR, *default:* hcloud-fipcontroller
 Labels selector to find deployment pods with. This should be the same value as used in the deployment.
 Can be ignored if no label was specified.
 
