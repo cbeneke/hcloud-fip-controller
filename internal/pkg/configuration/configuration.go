@@ -43,8 +43,15 @@ func (config *Configuration) Validate() error {
 	if config.Namespace == "" {
 		undefinedErrs = append(errs, "kubernetes namespace")
 	}
+
 	if config.LeaseDuration <= 0 {
-		errs = append(errs, "lease duration needs to be greater than one")
+		errs = append(errs, "lease duration needs to be greater than 0")
+	}
+	if config.LeaseRenewDeadline <= 0 {
+		errs = append(errs, "lease renew deadline needs to be greater than 0")
+	}
+	if config.LeaseRenewDeadline >= config.LeaseDuration {
+		errs = append(errs, "lease renew deadline needs to be smaller than lease duration")
 	}
 
 	if len(undefinedErrs) > 0 {
