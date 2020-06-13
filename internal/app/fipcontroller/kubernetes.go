@@ -82,6 +82,11 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 		}
 		addressList = append(addressList, address)
 	}
+
+	if len(addressList) < 1 {
+		return nil, fmt.Errorf("could not find any healthy nodes")
+	}
+
 	return
 }
 
