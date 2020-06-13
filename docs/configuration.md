@@ -27,6 +27,7 @@ Address type of the nodes. This might be set to internal, if your external IPs a
 
 * NODE_LABEL_SELECTOR
 Optionally restrict the searched nodes to assign floating ips to by a label selector.
+More infos about labels selectors can be found [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
 
 * NODE_NAME  
 Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
@@ -35,8 +36,10 @@ Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 Namespace the pod is running in. Should be invoked via fieldRef to metadata.namespace
 
 * POD_LABEL_SELECTOR, *default:* hcloud-fipcontroller
-Labels selector to find deployment pods with. This should be the same value as used in the deployment.
-Can be ignored if no label was specified.
+This variable should not be changed, unless the default label in the fip-controller deployment cannot be used for some reason.
+Labels selector to find deployment pods with. This must be the same value as used in the deployment.
+More infos about labels selectors can be found [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
+When the fip-controller deployment has no labels, no pods will be found and the fip-controller will look for ips in nodes instead.
 
 * POD_NAME  
 Name of the pod. Should be invoked via fieldRef to metadata.name
