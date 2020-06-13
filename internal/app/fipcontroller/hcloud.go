@@ -13,9 +13,7 @@ func newHetznerClient(token string) (*hcloud.Client, error) {
 	return hetznerClient, nil
 }
 
-/*
- * Search and return the hcloud floatingIP object for a given string representation of a IPv4 or IPv6 address
- */
+// Search and return the hcloud floatingIP object for a given string representation of a IPv4 or IPv6 address
 func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) (ip *hcloud.FloatingIP, err error) {
 	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
 	if err != nil {
@@ -34,10 +32,8 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 	return nil, fmt.Errorf("IP address '%s' not allocated", ipAddress)
 }
 
-/*
- * Search and return the hcloud Server objects for a given list of IP addresses.
- *  The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
- */
+// Search and return the hcloud Server objects for a given list of IP addresses.
+// The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
 func (controller *Controller) servers(ctx context.Context, ips []net.IP) (serverList []*hcloud.Server, err error) {
 	// Fetch all hetzner servers
 	servers, err := controller.HetznerClient.Server.All(ctx)
@@ -57,9 +53,7 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 	return serverList, nil
 }
 
-/*
- * Search for a hetzner Server that has the given ip in any of its networks
- */
+// Search for a hetzner Server that has the given ip in any of its networks
 func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net.IP) *hcloud.Server {
 	for _, server := range servers {
 		// IP must not be a floating IP, but might be private or public depending on the cluster configuration
@@ -85,10 +79,8 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net
 	return nil
 }
 
-/*
- * Fetches all floatingIPs from hetzner api with optional label selector.
- * For backwards compatibility this still uses hardcoded ips if specified in config
- */
+// Fetches all floatingIPs from hetzner api with optional label selector.
+// For backwards compatibility this still uses hardcoded ips if specified in config
 func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.FloatingIP, error) {
 	// Use hardcoded ips if specified
 	// TODO fetch FloatingIPs once beforehand (maybe????)

@@ -27,10 +27,8 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
 	return kubernetesClient, nil
 }
 
-/*
- * Search and return the IP address of a given kubernetes node name.
- *  Will return first found internal or external IP depending on nodeAddressType parameter
- */
+// Search and return the IP address of a given kubernetes node name.
+// Will return first found internal or external IP depending on nodeAddressType parameter
 func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
 	// Try to get deployment pods if certain label is specified
 	listOptions := metav1.ListOptions{}
@@ -87,9 +85,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	return
 }
 
-/*
- * Check if node is healthy
- */
+// Check if node is healthy
 func isNodeHealthy(node corev1.Node) bool {
 	for _, condition := range node.Status.Conditions {
 		if condition.Type == corev1.NodeReady {

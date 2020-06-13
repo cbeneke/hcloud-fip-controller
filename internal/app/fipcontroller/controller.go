@@ -61,7 +61,9 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}, nil
 }
 
-// Run update IP function once initially and every 30s afterwards
+// Run updates Floating IPs once initially and every 30s afterwards
+//
+// === Main Thread ===
 func (controller *Controller) Run(ctx context.Context) error {
 	if err := controller.UpdateFloatingIPs(ctx); err != nil {
 		return err
@@ -128,9 +130,7 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	return nil
 }
 
-/*
- * Find the server with the lowest amount of floating IPs
- */
+// Find the server with the lowest amount of floating IPs
 func findServerWithLowestFIP(servers []*hcloud.Server) *hcloud.Server {
 	if len(servers) < 1 {
 		return nil
@@ -144,10 +144,8 @@ func findServerWithLowestFIP(servers []*hcloud.Server) *hcloud.Server {
 	return server
 }
 
-/*
- * Checks for a server in a slice by its id
- * Returns true the server was found
- */
+// Checks for a server in a slice by its id
+// Returns true the server was found
 func hasServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
 	for _, item := range slice {
 		if item.ID == val.ID {
