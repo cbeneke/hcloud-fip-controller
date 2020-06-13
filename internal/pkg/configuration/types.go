@@ -48,6 +48,7 @@ func (flags *NodeAddressType) String() string {
 }
 
 // Set is used for setting the node address type
+// This function is required to satisfy the flag interface
 func (flags *NodeAddressType) Set(value string) error {
 	*flags = NodeAddressType(value)
 	return nil
