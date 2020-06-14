@@ -1,3 +1,6 @@
+* v0.3.5
+  * Leader election lease renew duration is now configurable (#49)
+
 * v0.3.4
   * Fix error message outPut for undefined options (#46)
   

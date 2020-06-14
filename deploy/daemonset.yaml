@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: fip-controller
-          image: cbeneke/hcloud-fip-controller:v0.3.4
+          image: cbeneke/hcloud-fip-controller:v0.3.5
           imagePullPolicy: IfNotPresent
           env:
             - name: NODE_NAME
