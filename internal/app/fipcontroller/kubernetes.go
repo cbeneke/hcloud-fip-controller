@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 
@@ -30,9 +31,14 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
 // Search and return the IP address of a given kubernetes node name.
 // Will return first found internal or external IP depending on nodeAddressType parameter
 func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
+	podLabelSelector, err := controller.createPodLabelSelector(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get information about pod: %v", err)
+	}
+
 	// Try to get deployment pods if certain label is specified
 	listOptions := metav1.ListOptions{}
-	listOptions.LabelSelector = controller.Configuration.PodLabelSelector
+	listOptions.LabelSelector = podLabelSelector
 
 	pods, err := controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).List(ctx, listOptions)
 	if err != nil {
@@ -107,4 +113,27 @@ func searchForAddress(addresses []corev1.NodeAddress, checkAddressType corev1.No
 		}
 	}
 	return nil
+}
+
+func (controller *Controller) createPodLabelSelector(ctx context.Context) (string, error) {
+	if controller.Configuration.PodLabelSelector != "" {
+		return controller.Configuration.PodLabelSelector, nil
+	}
+
+	pod, err := controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).Get(ctx, controller.Configuration.PodName, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("Could not get pod information: %v", err)
+	}
+	if len(pod.Labels) < 1 {
+		controller.Logger.Warnf("fip-controller pod has no labels, all pods in namespace will be used")
+		return "", nil
+	}
+
+	var stringBuilder strings.Builder
+	for key, value := range pod.Labels {
+		fmt.Fprintf(&stringBuilder, "%s=%s,", key, value)
+	}
+	labelSelector := stringBuilder.String()
+	labelSelector = labelSelector[:stringBuilder.Len()-1] // remove trailing ,
+	return labelSelector, nil
 }

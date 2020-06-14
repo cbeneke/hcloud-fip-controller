@@ -30,7 +30,7 @@ func main() {
 	flag.StringVar(&controllerConfig.LogLevel, "log-level", "Info", "Log level")
 	flag.StringVar(&controllerConfig.FloatingIPLabelSelector, "floating-ip-label-selector", "", "Selector for Floating IPs")
 	flag.StringVar(&controllerConfig.NodeLabelSelector, "node-label-selector", "", "Selector for Nodes")
-	flag.StringVar(&controllerConfig.PodLabelSelector, "pod-label-selector", "hcloud-fip-controller", "Selector for Pods. Should be the same key as specified in deployment")
+	flag.StringVar(&controllerConfig.PodLabelSelector, "pod-label-selector", "", "Selector for Pods. Should be the same key as specified in deployment")
 
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {

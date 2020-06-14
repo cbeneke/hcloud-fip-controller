@@ -35,10 +35,8 @@ Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
 * NAMESPACE  
 Namespace the pod is running in. Should be invoked via fieldRef to metadata.namespace
 
-* POD_LABEL_SELECTOR, *default:* hcloud-fipcontroller
-This variable should not be changed, unless the default label in the fip-controller deployment cannot be used for some reason.
-Labels selector to find deployment pods with. This must be the same value as used in the deployment.
-More infos about labels selectors can be found [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
+* POD_LABEL_SELECTOR 
+Labels selector to find deployment pods with. When this field is empty, the fip-controller will use all labels on its own pod. This is the intended behaviour in most cases.
 When the fip-controller deployment has no labels, no pods will be found and the fip-controller will look for ips in nodes instead.
 
 * POD_NAME  
