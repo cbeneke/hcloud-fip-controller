@@ -29,8 +29,8 @@ func (controller *Controller) leaderElectionConfig() (config leaderelection.Lead
 		Lock:            controller.leaseLock(controller.Configuration.PodName),
 		ReleaseOnCancel: true,
 		LeaseDuration:   time.Duration(controller.Configuration.LeaseDuration) * time.Second,
-		RenewDeadline:   15 * time.Second,
-		RetryPeriod:     5 * time.Second,
+		RenewDeadline:   time.Duration(controller.Configuration.LeaseRenewDeadline) * time.Second,
+		RetryPeriod:     2 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: controller.onStartedLeading,
 			OnStoppedLeading: controller.onStoppedLeading,

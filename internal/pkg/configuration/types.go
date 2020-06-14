@@ -20,6 +20,7 @@ type Configuration struct {
 	PodName                 string           `json:"pod_name,omitempty"`
 	LogLevel                string           `json:"log_level,omitempty"`
 	FloatingIPLabelSelector string           `json:"floating_ip_label_selector,omitempty"`
+	LeaseRenewDeadline      int              `json:"lease_renew_deadline,omitempty"`
 }
 
 // Set of string flags

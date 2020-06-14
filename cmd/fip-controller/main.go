@@ -22,7 +22,8 @@ func main() {
 	flag.Var(&controllerConfig.NodeAddressType, "node-address-type", "Kubernetes node address type")
 
 	flag.StringVar(&controllerConfig.HcloudAPIToken, "hcloud-api-token", "", "Hetzner cloud API token")
-	flag.IntVar(&controllerConfig.LeaseDuration, "lease-duration", 30, "Time to wait (in seconds) until next leader check")
+	flag.IntVar(&controllerConfig.LeaseDuration, "lease-duration", 15, "Time to wait (in seconds) until next leader check")
+	flag.IntVar(&controllerConfig.LeaseRenewDeadline, "lease-renew-deadline", 10, "Time to wait (in seconds) until next leader check")
 	flag.StringVar(&controllerConfig.LeaseName, "lease-name", "fip", "Name of the lease lock for leaderelection")
 	flag.StringVar(&controllerConfig.Namespace, "namespace", "", "Kubernetes Namespace")
 	flag.StringVar(&controllerConfig.NodeName, "node-name", "", "Kubernetes Node name")
