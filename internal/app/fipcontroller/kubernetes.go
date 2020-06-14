@@ -135,5 +135,6 @@ func (controller *Controller) createPodLabelSelector(ctx context.Context) (strin
 	}
 	labelSelector := stringBuilder.String()
 	labelSelector = labelSelector[:stringBuilder.Len()-1] // remove trailing ,
+	controller.Logger.Debugf("pod label selector created: %s", labelSelector)
 	return labelSelector, nil
 }
