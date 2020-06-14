@@ -13,8 +13,13 @@ Floating IP you want to configure. In case of IPv6 can be any of the /64 net. If
 * LEASE_NAME, *default:* "fip"  
 Name of the lease created by the lease lock used for leader election
 
-* LEASE_DURATION, *default:* 30  
+* LEASE_DURATION, *default:* 15
 Duration of the lease used by the lease lock. This is the maximum time until a new leader will be elected in case of failure.
+More about the leaderelection variables can be found [here](https://godoc.org/k8s.io/client-go/tools/leaderelection).
+
+* LEASE_RENEW_DEADLINE, *default* 10
+Duration that the master will retry refreshing its leadership before giving up.
+Must be smaller than LEASE_DURATION
 
 * LOG_LEVEL, *default*: Info  
 Log level of the controller.
