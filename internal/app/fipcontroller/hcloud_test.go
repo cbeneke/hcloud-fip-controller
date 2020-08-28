@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"encoding/json"
+	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/hetznercloud/hcloud-go/hcloud/schema"
 	"github.com/sirupsen/logrus"
@@ -36,7 +37,80 @@ func newTestEnv() testEnv {
 }
 
 func (t testEnv) Teardown() {
+}
 
+func TestFloatingIPs(t *testing.T) {
+	tests := []struct{
+		name string
+		confFloatingIPs []string
+		confFloatingIPsLabelSelector string
+		serverIPs []schema.FloatingIP
+		resultIPs []*hcloud.FloatingIP
+	} {
+		{
+			name: "example",
+			serverIPs: []schema.FloatingIP{
+				{
+					ID: 1,
+					Type: "ipv4",
+					IP: "1.2.3.4",
+				},
+			},
+			resultIPs: []*hcloud.FloatingIP{
+				{
+					ID: 1,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testEnv := newTestEnv()
+			defer testEnv.Teardown()
+
+			testEnv.Mux.HandleFunc("/floating_ips", func(w http.ResponseWriter, r *http.Request) {
+				json.NewEncoder(w).Encode(schema.FloatingIPListResponse{
+					FloatingIPs: test.serverIPs,
+				})
+			})
+
+			controller := Controller{
+				HetznerClient:    testEnv.Client,
+				KubernetesClient: nil,
+				Configuration:    &configuration.Configuration{},
+				Logger:           logrus.New(),
+			}
+
+			ps, err := controller.getFloatingIPs(context.Background())
+
+			if err != nil {
+				t.Fatalf("Error should be [nil] but was %v", err)
+			}
+
+			if ps != nil {
+				if test.resultIPs == nil {
+					t.Fatalf("floatingIps should be [nil] but were length %d", len(ps))
+				}
+			} else {
+				if test.resultIPs != nil {
+					t.Fatalf("floatingIps should be length %d but was [nil]", len(test.resultIPs))
+				}
+			}
+
+			for _, ip := range ps {
+				hasIp := false
+				for _, resIP := range test.resultIPs {
+					if resIP.ID == ip.ID {
+						hasIp = true
+					}
+				}
+				if !hasIp {
+					t.Fatalf("FloatingIPs should be length %d but was length %d", len(test.resultIPs), len(ps))
+				}
+			}
+		})
+	}
 }
 
 func TestFloatingIp(t *testing.T) {
