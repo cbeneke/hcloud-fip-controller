@@ -119,6 +119,10 @@ func (controller *Controller) createPodLabelSelector(ctx context.Context) (strin
 	if controller.Configuration.PodLabelSelector != "" {
 		return controller.Configuration.PodLabelSelector, nil
 	}
+	if controller.Configuration.PodName == "" {
+		controller.Logger.Warn("no pod name specified in configuration, all pods in namespace will be used")
+		return "", nil
+	}
 
 	pod, err := controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).Get(ctx, controller.Configuration.PodName, metav1.GetOptions{})
 	if err != nil {

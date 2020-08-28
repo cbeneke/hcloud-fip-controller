@@ -133,12 +133,16 @@ func TestFloatingIp(t *testing.T) {
 func TestServer(t *testing.T) {
 	tests := []struct{
 		name string
-		err error
+		inputIPS []net.IP
 		servers []schema.Server
-		server *hcloud.Server
+		resultServers []*hcloud.Server
+		err error
 	}{
 		{
 			name: "test public ipv4 success",
+			inputIPS: []net.IP{
+				net.ParseIP("1.2.3.4"),
+			},
 			servers: []schema.Server{
 				{
 					ID: 1,
@@ -149,12 +153,17 @@ func TestServer(t *testing.T) {
 					},
 				},
 			},
-			server: &hcloud.Server{
-				ID: 1,
+			resultServers: []*hcloud.Server{
+				{
+					ID: 1,
+				},
 			},
 		},
 		{
 			name: "test private ipv4 success",
+			inputIPS: []net.IP{
+				net.ParseIP("1.2.3.4"),
+			},
 			servers: []schema.Server{
 				{
 					ID: 1,
@@ -165,8 +174,10 @@ func TestServer(t *testing.T) {
 					},
 				},
 			},
-			server: &hcloud.Server{
-				ID: 1,
+			resultServers: []*hcloud.Server{
+				{
+					ID: 1,
+				},
 			},
 		},
 	}
@@ -189,7 +200,7 @@ func TestServer(t *testing.T) {
 				Logger:           logrus.New(),
 			}
 
-			server, err := controller.server(context.Background(), net.ParseIP("1.2.3.4"))
+			servers, err := controller.servers(context.Background(), test.inputIPS)
 
 			if err == nil {
 				if test.err != nil {
@@ -204,18 +215,26 @@ func TestServer(t *testing.T) {
 				}
 			}
 
-			if server == nil {
-				if test.server != nil {
-					t.Fatalf("result should be [%d] but was [nil]", test.server.ID)
+			if servers == nil {
+				if test.resultServers != nil {
+					t.Fatalf("result should be serverArray with length %d but was [nil]", len(test.resultServers))
 				}
 			} else {
-				if test.server == nil {
-					t.Fatalf("result should be [nil] but was [%d]", server.ID)
+				if test.resultServers == nil {
+					t.Fatalf("result should be [nil] but was serverArray with length %d", len(servers))
 				}
-				if server.ID != test.server.ID  {
-					t.Fatalf("result should be [%d] but was [%d]", test.server.ID, server.ID)
+			}
+
+			for i, server := range servers {
+				if server == nil {
+					t.Fatal("[nil] in serverlist not allowed")
+				} else {
+					if server.ID != test.resultServers[i].ID {
+						t.Fatalf("result should be [%d] but was [%d]", test.resultServers[i].ID, server.ID)
+					}
 				}
 			}
 		})
 	}
 }
+

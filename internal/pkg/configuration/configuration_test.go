@@ -7,7 +7,7 @@ import (
 
 func testConfig() *Configuration {
 	return &Configuration{
-		HcloudApiToken:     "token",
+		HcloudAPIToken:     "token",
 		HcloudFloatingIPs: []string{"1.2.3.4"},
 		LeaseDuration:      15,
 		LeaseRenewDeadline: 10,
@@ -41,19 +41,10 @@ func TestValidate(t *testing.T) {
 			name: "test no token",
 			config: func() *Configuration {
 				conf := testConfig()
-				conf.HcloudApiToken = ""
+				conf.HcloudAPIToken = ""
 				return conf
 			},
 			err: fmt.Errorf(errorPrefix + "hetzner cloud API token"),
-		},
-		{
-			name: "test no floating ips",
-			config: func() *Configuration {
-				conf := testConfig()
-				conf.HcloudFloatingIPs = nil
-				return conf
-			},
-			err: fmt.Errorf(errorPrefix + "hetzner cloud floating IPs"),
 		},
 		{
 			name: "test no node name",
