@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"net"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -17,7 +18,11 @@ func newHetznerClient(token string) (*hcloud.Client, error) {
  * Search and return the hcloud floatingIP object for a given string representation of a IPv4 or IPv6 address
  */
 func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) (ip *hcloud.FloatingIP, err error) {
-	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
+	var ips []*hcloud.FloatingIP
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		ips, err = controller.HetznerClient.FloatingIP.All(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch floating IPs: %v", err)
 	}
@@ -39,7 +44,11 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
  *  The IP Address can be a public IPv4, IPv6 address or a private address attached to any private network interface
  */
 func (controller *Controller) server(ctx context.Context, ip net.IP) (server *hcloud.Server, err error) {
-	servers, err := controller.HetznerClient.Server.All(ctx)
+	var servers []*hcloud.Server
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		servers, err = controller.HetznerClient.Server.All(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
 	}

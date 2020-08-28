@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"net"
 
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
@@ -32,7 +33,11 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
  *  Will return first found internal or external IP depending on nodeAddressType parameter
  */
 func (controller *Controller) nodeAddress(ctx context.Context, nodeName string, nodeAddressType configuration.NodeAddressType) (address net.IP, err error) {
-	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	var nodes *corev1.NodeList
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		nodes, err = controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}

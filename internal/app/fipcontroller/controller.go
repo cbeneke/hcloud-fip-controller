@@ -3,6 +3,8 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"os"
 	"time"
 
@@ -18,6 +20,7 @@ type Controller struct {
 	KubernetesClient *kubernetes.Clientset
 	Configuration    *configuration.Configuration
 	Logger           *logrus.Logger
+	Backoff          wait.Backoff
 }
 
 func NewController(config *configuration.Configuration) (*Controller, error) {
@@ -50,11 +53,18 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}
 	logger.SetLevel(loglevel)
 
+	backoff := wait.Backoff{
+		Duration: 1 * time.Second,
+		Factor:   1.2,
+		Steps:    5,
+	}
+
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
 		Logger:           logger,
+		Backoff:          backoff,
 	}, nil
 }
 
@@ -110,7 +120,11 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 
 		if floatingIP.Server == nil || server.ID != floatingIP.Server.ID {
 			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
-			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			var response *hcloud.Response
+			err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+				_, response, err = controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+				return err
+			})
 			if err != nil {
 				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)
 			}
@@ -121,4 +135,8 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func alwaysRetry(_ error) bool {
+	return true
 }
