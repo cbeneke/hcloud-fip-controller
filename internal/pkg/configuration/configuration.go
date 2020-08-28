@@ -7,9 +7,7 @@ import (
 	"strings"
 )
 
-/*
- * Read given config file and overwrite options from given Configuration
- */
+// VarsFromFile reads given config file and overwrite options from given Configuration
 func (config *Configuration) VarsFromFile(configFile string) error {
 	file, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -24,18 +22,13 @@ func (config *Configuration) VarsFromFile(configFile string) error {
 	return nil
 }
 
-/*
- * Validate config options. Returns all errors found in a joined string
- */
+// Validate config options. Returns all errors found in a joined string
 func (config *Configuration) Validate() error {
 	var errs []string
 	var undefinedErrs []string
 
-	if config.HcloudApiToken == "" {
+	if config.HcloudAPIToken == "" {
 		undefinedErrs = append(errs, "hetzner cloud API token")
-	}
-	if len(config.HcloudFloatingIPs) <= 0 {
-		undefinedErrs = append(errs, "hetzner cloud floating IPs")
 	}
 	if config.NodeName == "" {
 		undefinedErrs = append(errs, "kubernetes node name")
