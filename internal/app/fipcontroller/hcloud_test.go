@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/hetznercloud/hcloud-go/hcloud/schema"
@@ -48,12 +49,49 @@ func TestFloatingIPs(t *testing.T) {
 		resultIPs []*hcloud.FloatingIP
 	} {
 		{
-			name: "example",
+			name: "successful simple case",
 			serverIPs: []schema.FloatingIP{
 				{
 					ID: 1,
 					Type: "ipv4",
 					IP: "1.2.3.4",
+				},
+			},
+			resultIPs: []*hcloud.FloatingIP{
+				{
+					ID: 1,
+				},
+			},
+		},
+		{
+			name: "successful old config",
+			confFloatingIPs: []string{
+				"1.2.3.4",
+			},
+			serverIPs: []schema.FloatingIP{
+				{
+					ID: 1,
+					Type: "ipv4",
+					IP: "1.2.3.4",
+				},
+			},
+			resultIPs: []*hcloud.FloatingIP{
+				{
+					ID: 1,
+				},
+			},
+		},
+		{
+			name: "successful label selector",
+			confFloatingIPsLabelSelector: "foob",
+			serverIPs: []schema.FloatingIP{
+				{
+					ID: 1,
+					Type: "ipv4",
+					IP: "1.2.3.4",
+					Labels: map[string]string{
+						"foo": "bar",
+					},
 				},
 			},
 			resultIPs: []*hcloud.FloatingIP{
@@ -78,11 +116,15 @@ func TestFloatingIPs(t *testing.T) {
 			controller := Controller{
 				HetznerClient:    testEnv.Client,
 				KubernetesClient: nil,
-				Configuration:    &configuration.Configuration{},
+				Configuration:    &configuration.Configuration{
+					FloatingIPLabelSelector: test.confFloatingIPsLabelSelector,
+					HcloudFloatingIPs: test.confFloatingIPs,
+				},
 				Logger:           logrus.New(),
 			}
 
 			ps, err := controller.getFloatingIPs(context.Background())
+			fmt.Println(len(ps))
 
 			if err != nil {
 				t.Fatalf("Error should be [nil] but was %v", err)

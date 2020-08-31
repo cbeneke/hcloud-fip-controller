@@ -97,10 +97,10 @@ func TestNodeAddressList(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kubermaticFakeClient := fake.NewSimpleClientset(test.objects...)
+			kubernetesFakeClient := fake.NewSimpleClientset(test.objects...)
 			controller := Controller{
 				HetznerClient:    nil,
-				KubernetesClient: kubermaticFakeClient,
+				KubernetesClient: kubernetesFakeClient,
 				Configuration: &configuration.Configuration{
 					PodName:   test.podName,
 					Namespace: "fip",
