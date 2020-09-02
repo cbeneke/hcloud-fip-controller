@@ -9,6 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	"net/http"
 	"testing"
@@ -173,6 +174,9 @@ func TestUpdateFloatingIPs(t *testing.T) {
 			controller := Controller{
 				HetznerClient:    testEnv.Client,
 				KubernetesClient: kubernetesFakeClient,
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				Configuration:    &configuration.Configuration{},
 				Logger:           logrus.New(),
 			}

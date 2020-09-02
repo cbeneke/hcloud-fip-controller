@@ -8,6 +8,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	"net"
 	"strings"
@@ -101,6 +102,9 @@ func TestNodeAddressList(t *testing.T) {
 			controller := Controller{
 				HetznerClient:    nil,
 				KubernetesClient: kubernetesFakeClient,
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				Configuration: &configuration.Configuration{
 					PodName:   test.podName,
 					Namespace: "fip",
@@ -256,6 +260,9 @@ func TestPodLabelSelector(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			controller := Controller{
 				KubernetesClient: fake.NewSimpleClientset(test.objects...),
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				Configuration: &configuration.Configuration{
 					PodLabelSelector: test.podLabelSelector,
 					PodName:          test.podName,

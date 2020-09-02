@@ -8,6 +8,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/hetznercloud/hcloud-go/hcloud/schema"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -115,7 +116,9 @@ func TestFloatingIPs(t *testing.T) {
 
 			controller := Controller{
 				HetznerClient:    testEnv.Client,
-				KubernetesClient: nil,
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				Configuration:    &configuration.Configuration{
 					FloatingIPLabelSelector: test.confFloatingIPsLabelSelector,
 					HcloudFloatingIPs: test.confFloatingIPs,
@@ -210,8 +213,9 @@ func TestFloatingIp(t *testing.T) {
 
 			controller := Controller{
 				HetznerClient:    testEnv.Client,
-				KubernetesClient: nil,
-				Configuration:    nil,
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				Logger:           logrus.New(),
 			}
 
@@ -311,6 +315,9 @@ func TestServer(t *testing.T) {
 
 			controller := Controller{
 				HetznerClient:    testEnv.Client,
+				Backoff: wait.Backoff{
+					Steps: 1,
+				},
 				KubernetesClient: nil,
 				Configuration:    nil,
 				Logger:           logrus.New(),
