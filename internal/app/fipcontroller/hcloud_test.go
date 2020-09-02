@@ -249,15 +249,17 @@ func TestFloatingIp(t *testing.T) {
 func TestServer(t *testing.T) {
 	tests := []struct{
 		name string
-		inputIPS []net.IP
+		inputIPS [][]net.IP
 		servers []schema.Server
 		resultServers []*hcloud.Server
 		err error
 	}{
 		{
 			name: "test public ipv4 success",
-			inputIPS: []net.IP{
-				net.ParseIP("1.2.3.4"),
+			inputIPS: [][]net.IP{
+				{
+					net.ParseIP("1.2.3.4"),
+				},
 			},
 			servers: []schema.Server{
 				{
@@ -277,8 +279,10 @@ func TestServer(t *testing.T) {
 		},
 		{
 			name: "test private ipv4 success",
-			inputIPS: []net.IP{
-				net.ParseIP("1.2.3.4"),
+			inputIPS: [][]net.IP{
+				{
+					net.ParseIP("1.2.3.4"),
+				},
 			},
 			servers: []schema.Server{
 				{

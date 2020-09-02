@@ -30,7 +30,7 @@ func newKubernetesClient() (*kubernetes.Clientset, error) {
 
 // Search and return the IP address of a given kubernetes node name.
 // Will return first found internal or external IP depending on nodeAddressType parameter
-func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressType configuration.NodeAddressType) (addressList []net.IP, err error) {
+func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressType configuration.NodeAddressType) (addressList [][]net.IP, err error) {
 	podLabelSelector, err := controller.createPodLabelSelector(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get information about pod: %v", err)
@@ -46,10 +46,28 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	}
 	controller.Logger.Debugf("Found %d pods", len(pods.Items))
 
+	var nodeNames []string
 	for _, pod := range pods.Items {
-		address := net.ParseIP(pod.Status.HostIP)
-		addressList = append(addressList, address)
+
+		nodeNames = append(nodeNames, pod.Spec.NodeName)
+
+		// address := net.ParseIP(pod.Status.HostIP)
+		// addressList = append(addressList, address)
 	}
+
+	if len(nodeNames) > 0 {
+		nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("could not list nodes: %v", err)
+		}
+		for _, node := range nodes.Items {
+			if hasNodeName(nodeNames, node.Name) {
+				// TODO change to 2d array
+				addressList = append(addressList, searchForAddress(node.Status.Addresses))
+			}
+		}
+	}
+
 	if len(addressList) > 0 {
 		controller.Logger.Debugf("Found %d ips from pods", len(addressList))
 		return
@@ -82,11 +100,13 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 		}
 		controller.Logger.Debugf("Using address type '%s' for node %s", checkAddressType, node.Name)
 
-		address := searchForAddress(addresses, checkAddressType)
+		addressList = append(addressList, searchForAddress(addresses))
+		/*
 		if address == nil {
 			return nil, fmt.Errorf("coud not find address for node %s", node.Name)
 		}
 		addressList = append(addressList, address)
+		 */
 	}
 
 	if len(addressList) < 1 {
@@ -106,13 +126,22 @@ func isNodeHealthy(node corev1.Node) bool {
 	return false
 }
 
-func searchForAddress(addresses []corev1.NodeAddress, checkAddressType corev1.NodeAddressType) net.IP {
+func searchForAddress(addresses []corev1.NodeAddress) (possibleIPs []net.IP) {
 	for _, address := range addresses {
-		if address.Type == checkAddressType {
-			return net.ParseIP(address.Address)
+		if address.Type == corev1.NodeExternalIP || address.Type == corev1.NodeInternalIP {
+			possibleIPs = append(possibleIPs, net.ParseIP(address.Address))
 		}
 	}
-	return nil
+	return possibleIPs
+}
+
+func hasNodeName(nodeNames []string, nodeName string) bool {
+	for _, name := range nodeNames {
+		if name == nodeName {
+			return true
+		}
+	}
+	return false
 }
 
 func (controller *Controller) createPodLabelSelector(ctx context.Context) (string, error) {

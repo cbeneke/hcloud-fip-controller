@@ -34,7 +34,7 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 
 // Search and return the hcloud Server objects for a given list of IP addresses.
 // The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
-func (controller *Controller) servers(ctx context.Context, ips []net.IP) (serverList []*hcloud.Server, err error) {
+func (controller *Controller) servers(ctx context.Context, ips [][]net.IP) (serverList []*hcloud.Server, err error) {
 	// Fetch all hetzner servers
 	servers, err := controller.HetznerClient.Server.All(ctx)
 	if err != nil {
@@ -54,27 +54,29 @@ func (controller *Controller) servers(ctx context.Context, ips []net.IP) (server
 }
 
 // Search for a hetzner Server that has the given ip in any of its networks
-func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ip net.IP) *hcloud.Server {
-	for _, server := range servers {
-		// IP must not be a floating IP, but might be private or public depending on the cluster configuration
-		if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
-			controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
-			return server
-		}
-
-		hasPrivateNet := false
-		for _, privateNet := range server.PrivateNet {
-			if privateNet.IP.Equal(ip) {
-				hasPrivateNet = true
-				break
+func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ips []net.IP) *hcloud.Server {
+	for _, ip := range ips {
+		for _, server := range servers {
+			// IP must not be a floating IP, but might be private or public depending on the cluster configuration
+			if server.PublicNet.IPv4.IP.Equal(ip) || server.PublicNet.IPv6.IP.Equal(ip) {
+				controller.Logger.Debugf("Found matching public IP on server '%s'", server.Name)
+				return server
 			}
-		}
 
-		if hasPrivateNet {
-			controller.Logger.Debugf("Found matching private IP for server '%s'", server.Name)
-			return server
-		}
+			hasPrivateNet := false
+			for _, privateNet := range server.PrivateNet {
+				if privateNet.IP.Equal(ip) {
+					hasPrivateNet = true
+					break
+				}
+			}
 
+			if hasPrivateNet {
+				controller.Logger.Debugf("Found matching private IP for server '%s'", server.Name)
+				return server
+			}
+
+		}
 	}
 	return nil
 }
