@@ -19,7 +19,7 @@ import (
 // Holds all client configurations and loggers
 type Controller struct {
 	HetznerClient    *hcloud.Client
-	KubernetesClient *kubernetes.Clientset
+	KubernetesClient kubernetes.Interface
 	Configuration    *configuration.Configuration
 	Logger           *logrus.Logger
 	Backoff          wait.Backoff
