@@ -10,7 +10,7 @@ Selector for floating ips in case not all floating ips should be used in the con
 * HCLOUD_API_TOKEN  
 API token for the hetzner cloud access.
 
-* HCLOUD_FLOATING_IP  
+* HCLOUD_FLOATING_IP **deprecated**
 Floating IP you want to configure. In case of IPv6 can be any of the /64 net. If you want to use multiple IPs use config file or command line parameters. When no floating ips are given, the controller will auto discover them from the hetzner api.
 
 * LEASE_NAME, *default:* "fip"  
