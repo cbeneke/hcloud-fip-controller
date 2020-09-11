@@ -48,11 +48,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 
 	var nodeNames []string
 	for _, pod := range pods.Items {
-
 		nodeNames = append(nodeNames, pod.Spec.NodeName)
-
-		// address := net.ParseIP(pod.Status.HostIP)
-		// addressList = append(addressList, address)
 	}
 
 	if len(nodeNames) > 0 {
@@ -62,8 +58,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 		}
 		for _, node := range nodes.Items {
 			if hasNodeName(nodeNames, node.Name) {
-				// TODO change to 2d array
-				addressList = append(addressList, searchForAddress(node.Status.Addresses))
+				addressList = append(addressList, searchForAddresses(node.Status.Addresses))
 			}
 		}
 	}
@@ -100,13 +95,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 		}
 		controller.Logger.Debugf("Using address type '%s' for node %s", checkAddressType, node.Name)
 
-		addressList = append(addressList, searchForAddress(addresses))
-		/*
-		if address == nil {
-			return nil, fmt.Errorf("coud not find address for node %s", node.Name)
-		}
-		addressList = append(addressList, address)
-		 */
+		addressList = append(addressList, searchForAddresses(addresses))
 	}
 
 	if len(addressList) < 1 {
@@ -126,7 +115,7 @@ func isNodeHealthy(node corev1.Node) bool {
 	return false
 }
 
-func searchForAddress(addresses []corev1.NodeAddress) (possibleIPs []net.IP) {
+func searchForAddresses(addresses []corev1.NodeAddress) (possibleIPs []net.IP) {
 	for _, address := range addresses {
 		if address.Type == corev1.NodeExternalIP || address.Type == corev1.NodeInternalIP {
 			possibleIPs = append(possibleIPs, net.ParseIP(address.Address))
