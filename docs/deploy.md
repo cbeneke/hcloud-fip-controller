@@ -31,21 +31,6 @@ $ kubectl apply -f deploy/rbac.yaml
 $ kubectl apply -f deploy/deployment.yaml
 $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fip-controller-config
-  namespace: fip-controller
-data:
-  config.json: |
-    {
-      "hcloud_floating_ips": [
-        "<hcloud-floating-ip>",
-        "<hcloud-floating-ip>",
-        ...
-      ]
-    }
----
-apiVersion: v1
 kind: Secret
 metadata:
   name: fip-controller-secrets
@@ -53,6 +38,9 @@ metadata:
 stringData:
   HCLOUD_API_TOKEN: <hcloud_api_token>
 ```
+
+If you want to use a configmap to configure your application you can comment out the corresponding lines in the deployment/daemonset.
+Please refer to the [configmap options](./configuration.md#config.json-fields) to see which options are available.
 
 ### Using a DaemonSet
 
