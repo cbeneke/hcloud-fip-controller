@@ -40,7 +40,7 @@ stringData:
 ```
 
 If you want to use a configmap to configure your application you can comment out the corresponding lines in the deployment/daemonset.
-Please refer to the [configmap options](./configuration.md#config.json-fields) to see which options are available.
+Please refer to the [configmap options](./configuration.md#configjson-fields) to see which options are available.
 
 ### Using a DaemonSet
 
