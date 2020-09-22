@@ -1,7 +1,7 @@
 * v0.4.0
+  * **IMPORTANT** setting specific floating ips in config is now deprecated and will be removed soon. Please use floating ip label selector instead if only some ips should be used
   * Ips will now get redistributed onto multiple nodes (#32)
   * Hetzner floating ips can now be autodiscovered (#21)
-  * **IMPORTANT** setting specific floating ips in config is now deprecated and will be removed soon. Please use floating ip label selector instead if only some ips should be used
   * Add tests for all important functions (#6)
 
 * v0.3.5
