@@ -56,18 +56,11 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}
 	logger.SetLevel(loglevel)
 
-	backoff := wait.Backoff{
-		Duration: 1 * time.Second,
-		Factor:   1.2,
-		Steps:    5,
-	}
-
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
 		Logger:           logger,
-		Backoff:          backoff,
 	}, nil
 }
 
@@ -152,10 +145,6 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 	return nil
 }
 
-func alwaysRetry(_ error) bool {
-	return true
-}
-
 // Find the server with the lowest amount of floating IPs
 func findServerWithLowestFIP(servers []*hcloud.Server) *hcloud.Server {
 	if len(servers) < 1 {
@@ -179,4 +168,8 @@ func hasServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
 		}
 	}
 	return false
+}
+
+func alwaysRetry(_ error) bool {
+	return true
 }

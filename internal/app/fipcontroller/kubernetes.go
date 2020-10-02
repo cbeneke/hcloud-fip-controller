@@ -57,7 +57,11 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	}
 
 	if len(nodeNames) > 0 {
-		nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		var nodes *corev1.NodeList
+		err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+			nodes, err = controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			return err
+		})
 		if err != nil {
 			return nil, fmt.Errorf("could not list nodes: %v", err)
 		}
