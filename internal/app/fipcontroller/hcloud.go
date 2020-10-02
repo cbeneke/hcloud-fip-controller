@@ -63,17 +63,11 @@ func (controller *Controller) searchServerForIP(servers []*hcloud.Server, ips []
 				return server
 			}
 
-			hasPrivateNet := false
 			for _, privateNet := range server.PrivateNet {
 				if privateNet.IP.Equal(ip) {
-					hasPrivateNet = true
-					break
+					controller.Logger.Debugf("Found matching private IP for server '%s'", server.Name)
+					return server
 				}
-			}
-
-			if hasPrivateNet {
-				controller.Logger.Debugf("Found matching private IP for server '%s'", server.Name)
-				return server
 			}
 
 		}
