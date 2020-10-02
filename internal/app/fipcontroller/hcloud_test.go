@@ -3,7 +3,6 @@ package fipcontroller
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/hetznercloud/hcloud-go/hcloud/schema"
@@ -11,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -124,7 +124,6 @@ func TestFloatingIPs(t *testing.T) {
 			}
 
 			ps, err := controller.getFloatingIPs(context.Background())
-			fmt.Println(len(ps))
 
 			if err != nil {
 				t.Fatalf("Error should be [nil] but was %v", err)
@@ -217,17 +216,8 @@ func TestFloatingIp(t *testing.T) {
 
 			ip, err := controller.floatingIP(context.Background(), test.inputIP)
 
-			if err == nil {
-				if test.err != nil {
-					t.Fatalf("error should be [%v] but was [nil]", test.err)
-				}
-			} else {
-				if test.err == nil {
-					t.Fatalf("error should be [nil] but was [%v]", err)
-				}
-				if err.Error() != test.err.Error() {
-					t.Fatalf("error should be [%v] but was [%v]", test.err, err)
-				}
+			if !reflect.DeepEqual(test.err, err) {
+				t.Fatalf("error should be [%v] but was [%v]", test.err, err)
 			}
 
 			if ip == nil {
@@ -249,15 +239,17 @@ func TestFloatingIp(t *testing.T) {
 func TestServer(t *testing.T) {
 	tests := []struct{
 		name string
-		inputIPS []net.IP
+		inputIPS [][]net.IP
 		servers []schema.Server
 		resultServers []*hcloud.Server
 		err error
 	}{
 		{
 			name: "test public ipv4 success",
-			inputIPS: []net.IP{
-				net.ParseIP("1.2.3.4"),
+			inputIPS: [][]net.IP{
+				{
+					net.ParseIP("1.2.3.4"),
+				},
 			},
 			servers: []schema.Server{
 				{
@@ -277,8 +269,10 @@ func TestServer(t *testing.T) {
 		},
 		{
 			name: "test private ipv4 success",
-			inputIPS: []net.IP{
-				net.ParseIP("1.2.3.4"),
+			inputIPS: [][]net.IP{
+				{
+					net.ParseIP("1.2.3.4"),
+				},
 			},
 			servers: []schema.Server{
 				{
@@ -318,17 +312,8 @@ func TestServer(t *testing.T) {
 
 			servers, err := controller.servers(context.Background(), test.inputIPS)
 
-			if err == nil {
-				if test.err != nil {
-					t.Fatalf("error should be [%v] but was [nil]", test.err)
-				}
-			} else {
-				if test.err == nil {
-					t.Fatalf("error should be [nil] but was [%v]", err)
-				}
-				if err.Error() != test.err.Error() {
-					t.Fatalf("error should be [%v] but was [%v]", test.err, err)
-				}
+			if !reflect.DeepEqual(test.err, err) {
+				t.Fatalf("error should be [%v] but was [%v]", test.err, err)
 			}
 
 			if servers == nil {
