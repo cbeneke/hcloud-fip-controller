@@ -3,10 +3,11 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 	"os"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/sirupsen/logrus"
@@ -56,11 +57,18 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}
 	logger.SetLevel(loglevel)
 
+	backoff := wait.Backoff{
+		Duration: 1 * time.Second,
+		Factor:   1.2,
+		Steps:    5,
+	}
+
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
 		Logger:           logger,
+		Backoff:          backoff,
 	}, nil
 }
 
