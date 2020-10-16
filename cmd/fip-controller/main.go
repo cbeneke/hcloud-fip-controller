@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/namsral/flag"
 
@@ -32,7 +33,9 @@ func main() {
 	flag.StringVar(&controllerConfig.FloatingIPLabelSelector, "floating-ip-label-selector", "", "Selector for Floating IPs")
 	flag.StringVar(&controllerConfig.NodeLabelSelector, "node-label-selector", "", "Selector for Nodes")
 	flag.StringVar(&controllerConfig.PodLabelSelector, "pod-label-selector", "", "Selector for Pods. Should be the same key as specified in deployment")
-
+	flag.DurationVar(&controllerConfig.BackoffDuration, "backoff-duration", time.Second, "Duration for first backoff")
+	flag.Float64Var(&controllerConfig.BackoffFactor, "backoff-factor", 1.2, "Factor for backoff increase")
+	flag.IntVar(&controllerConfig.BackoffSteps, "backoff-steps", 5, "Number of backoff retries")
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {
 		if err := controllerConfig.VarsFromFile("config/config.json"); err != nil {

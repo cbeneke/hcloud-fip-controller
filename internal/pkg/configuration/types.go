@@ -3,6 +3,7 @@ package configuration
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Configuration has all configurable values for the fip-controller
@@ -21,6 +22,9 @@ type Configuration struct {
 	LogLevel                string           `json:"log_level,omitempty"`
 	FloatingIPLabelSelector string           `json:"floating_ip_label_selector,omitempty"`
 	LeaseRenewDeadline      int              `json:"lease_renew_deadline,omitempty"`
+	BackoffDuration         time.Duration    `json:"backoff_duration,omitempty"`
+	BackoffFactor           float64          `json:"backoff_factor,omitempty"`
+	BackoffSteps            int              `json:"backoff_steps,omitempty"`
 }
 
 // Set of string flags

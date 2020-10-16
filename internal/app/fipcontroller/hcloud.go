@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"net"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -15,7 +16,11 @@ func newHetznerClient(token string) (*hcloud.Client, error) {
 
 // Search and return the hcloud floatingIP object for a given string representation of a IPv4 or IPv6 address
 func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) (ip *hcloud.FloatingIP, err error) {
-	ips, err := controller.HetznerClient.FloatingIP.All(ctx)
+	var ips []*hcloud.FloatingIP
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		ips, err = controller.HetznerClient.FloatingIP.All(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch floating IPs: %v", err)
 	}
@@ -36,7 +41,11 @@ func (controller *Controller) floatingIP(ctx context.Context, ipAddress string) 
 // The IP Addresses can be public IPv4, IPv6 addresses or private addresses attached to any private network interface
 func (controller *Controller) servers(ctx context.Context, ips [][]net.IP) (serverList []*hcloud.Server, err error) {
 	// Fetch all hetzner servers
-	servers, err := controller.HetznerClient.Server.All(ctx)
+	var servers []*hcloud.Server
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		servers, err = controller.HetznerClient.Server.All(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch servers: %v", err)
 	}
@@ -99,8 +108,13 @@ func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.Flo
 		listOpts.LabelSelector = controller.Configuration.FloatingIPLabelSelector
 		floatingIPListOpts = hcloud.FloatingIPListOpts{ListOpts: listOpts}
 	}
+	var floatingIPs []*hcloud.FloatingIP
+	var err error
 
-	floatingIPs, err := controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
+	err = retry.OnError(retry.DefaultBackoff, alwaysRetry, func() error {
+		floatingIPs, err = controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not get floating IPs: %v", err)
 	}

@@ -4,6 +4,15 @@ Environment variables take precedence over the config file
 
 ## ENV variables
 
+* BACKOFF_DURATION, *default* "1s"
+The duration for the first backoff 
+
+* BACKOFF_FACTOR, *default* 1.2
+The increase of the duration after each try
+
+* BACKOFF_STEPS, *default* 5
+The amount of times the backoff retries a call
+
 * FLOATING_IPS_LABEL_SELECTOR
 Selector for floating ips in case not all floating ips should be used in the controller. This will be ignored when hcloud_floating_ips are defined.
 

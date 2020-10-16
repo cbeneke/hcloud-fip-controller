@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
+
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -20,6 +23,7 @@ type Controller struct {
 	KubernetesClient kubernetes.Interface
 	Configuration    *configuration.Configuration
 	Logger           *logrus.Logger
+	Backoff          wait.Backoff
 }
 
 // NewController creates a new Controller and with it the client configurations and loggers
@@ -53,11 +57,18 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	}
 	logger.SetLevel(loglevel)
 
+	backoff := wait.Backoff{
+		Duration: config.BackoffDuration,
+		Factor:   config.BackoffFactor,
+		Steps:    config.BackoffSteps,
+	}
+
 	return &Controller{
 		HetznerClient:    hetznerClient,
 		KubernetesClient: kubernetesClient,
 		Configuration:    config,
 		Logger:           logger,
+		Backoff:          backoff,
 	}, nil
 }
 
@@ -123,7 +134,11 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			server := findServerWithLowestFIP(runningServers)
 
 			controller.Logger.Infof("Switching address '%s' to server '%s'", floatingIP.IP.String(), server.Name)
-			_, response, err := controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+			var response *hcloud.Response
+			err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+				_, response, err = controller.HetznerClient.FloatingIP.Assign(ctx, floatingIP, server)
+				return err
+			})
 			if err != nil {
 				return fmt.Errorf("could not update floating IP '%s': %v", floatingIP.IP.String(), err)
 			}
@@ -161,4 +176,8 @@ func hasServerByID(slice []*hcloud.Server, val *hcloud.Server) bool {
 		}
 	}
 	return false
+}
+
+func alwaysRetry(_ error) bool {
+	return true
 }

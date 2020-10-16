@@ -3,6 +3,7 @@ package fipcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"net"
 	"strings"
 
@@ -39,8 +40,12 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	// Try to get deployment pods if certain label is specified
 	listOptions := metav1.ListOptions{}
 	listOptions.LabelSelector = podLabelSelector
+	var pods *corev1.PodList
 
-	pods, err := controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).List(ctx, listOptions)
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		pods, err = controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).List(ctx, listOptions)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
@@ -52,7 +57,11 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	}
 
 	if len(nodeNames) > 0 {
-		nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		var nodes *corev1.NodeList
+		err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+			nodes, err = controller.KubernetesClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			return err
+		})
 		if err != nil {
 			return nil, fmt.Errorf("could not list nodes: %v", err)
 		}
@@ -73,8 +82,12 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	if controller.Configuration.NodeLabelSelector != "" {
 		listOptions.LabelSelector = controller.Configuration.NodeLabelSelector
 	}
+	var nodes *corev1.NodeList
 
-	nodes, err := controller.KubernetesClient.CoreV1().Nodes().List(ctx, listOptions)
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		nodes, err = controller.KubernetesClient.CoreV1().Nodes().List(ctx, listOptions)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not list nodes: %v", err)
 	}
@@ -137,12 +150,18 @@ func (controller *Controller) createPodLabelSelector(ctx context.Context) (strin
 	if controller.Configuration.PodLabelSelector != "" {
 		return controller.Configuration.PodLabelSelector, nil
 	}
+
 	if controller.Configuration.PodName == "" {
 		controller.Logger.Warn("no pod name specified in configuration, all pods in namespace will be used")
 		return "", nil
 	}
 
-	pod, err := controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).Get(ctx, controller.Configuration.PodName, metav1.GetOptions{})
+	var pod *corev1.Pod
+	var err error
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
+		pod, err = controller.KubernetesClient.CoreV1().Pods(controller.Configuration.Namespace).Get(ctx, controller.Configuration.PodName, metav1.GetOptions{})
+		return err
+	})
 	if err != nil {
 		return "", fmt.Errorf("Could not get pod information: %v", err)
 	}

@@ -47,6 +47,18 @@ func (config *Configuration) Validate() error {
 		errs = append(errs, "lease renew deadline needs to be smaller than lease duration")
 	}
 
+	if config.BackoffDuration == 0 {
+		errs = append(errs, "backoff duration is not a valid duration or 0")
+	}
+
+	if config.BackoffFactor < 1 {
+		errs = append(errs, "backoff factor must be at least 1")
+	}
+
+	if config.BackoffSteps < 0 {
+		errs = append(errs, "backoff steps need to be greater than 0")
+	}
+
 	if len(undefinedErrs) > 0 {
 		errs = append(errs, fmt.Sprintf("required configuration options not configured: %s", strings.Join(undefinedErrs, ", ")))
 	}
