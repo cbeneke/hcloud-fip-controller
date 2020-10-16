@@ -58,9 +58,9 @@ func NewController(config *configuration.Configuration) (*Controller, error) {
 	logger.SetLevel(loglevel)
 
 	backoff := wait.Backoff{
-		Duration: 1 * time.Second,
-		Factor:   1.2,
-		Steps:    5,
+		Duration: config.BackoffDuration,
+		Factor:   config.BackoffFactor,
+		Steps:    config.BackoffSteps,
 	}
 
 	return &Controller{

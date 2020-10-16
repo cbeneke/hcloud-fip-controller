@@ -3,12 +3,13 @@ package configuration
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func testConfig() *Configuration {
 	return &Configuration{
 		HcloudAPIToken:     "token",
-		HcloudFloatingIPs: []string{"1.2.3.4"},
+		HcloudFloatingIPs:  []string{"1.2.3.4"},
 		LeaseDuration:      15,
 		LeaseRenewDeadline: 10,
 		LeaseName:          "fip",
@@ -17,6 +18,9 @@ func testConfig() *Configuration {
 		NodeName:           "example",
 		PodName:            "example",
 		LogLevel:           "Info",
+		BackoffDuration:    time.Second,
+		BackoffFactor:      1.2,
+		BackoffSteps:       5,
 	}
 }
 
@@ -26,9 +30,9 @@ type GenConfiguration func() *Configuration
 
 func TestValidate(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		config GenConfiguration
-		err error
+		err    error
 	}{
 		{
 			name: "test valid config",
@@ -81,6 +85,33 @@ func TestValidate(t *testing.T) {
 				return conf
 			},
 			err: fmt.Errorf("lease renew deadline needs to be greater than 0"),
+		},
+		{
+			name: "test backoff duration invalid",
+			config: func() *Configuration {
+				conf := testConfig()
+				conf.BackoffDuration = 0
+				return conf
+			},
+			err: fmt.Errorf("backoff duration is not a valid duration or 0"),
+		},
+		{
+			name: "test backoff factor invalid",
+			config: func() *Configuration {
+				conf := testConfig()
+				conf.BackoffFactor = 0.5
+				return conf
+			},
+			err: fmt.Errorf("backoff factor must be at least 1"),
+		},
+		{
+			name: "test backoff steps invalid",
+			config: func() *Configuration {
+				conf := testConfig()
+				conf.BackoffSteps = -1
+				return conf
+			},
+			err: fmt.Errorf("backoff steps need to be greater than 0"),
 		},
 	}
 
