@@ -1,3 +1,8 @@
+* v0.4.1
+  * Add a configurable backoff for all outgoing calls (#53)
+  * Update to go 1.15 (#53)
+  * Log now shows correct file and line number again (#53)
+
 * v0.4.0
   * **IMPORTANT** setting specific floating ips in config is now deprecated and will be removed soon. Please use floating ip label selector instead if only some ips should be used
   * Ips will now get redistributed onto multiple nodes (#32)
