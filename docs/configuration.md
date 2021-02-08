@@ -15,6 +15,7 @@ The amount of times the backoff retries a call
 
 * FLOATING_IPS_LABEL_SELECTOR
 Selector for floating ips in case not all floating ips should be used in the controller. This will be ignored when hcloud_floating_ips are defined.
+More infos about hetzner label selectors can be found [here](https://docs.hetzner.cloud/#label-selector)
 
 * HCLOUD_API_TOKEN  
 API token for the hetzner cloud access.
@@ -41,7 +42,7 @@ Address type of the nodes. This might be set to internal, if your external IPs a
 
 * NODE_LABEL_SELECTOR
 Optionally restrict the searched nodes to assign floating ips to by a label selector.
-More infos about labels selectors can be found [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
+More infos about kubernetes labels selectors can be found [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
 
 * NODE_NAME  
 Name of the scheduled node. Should be invoked via fieldRef to spec.nodeName
