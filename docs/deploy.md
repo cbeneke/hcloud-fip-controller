@@ -4,7 +4,7 @@
 Install helm in the latest version and add the cbeneke/helm-charts repo
 
 ```
-$ helm repo add cbeneke https://cbeneke.github.com/helm-charts
+$ helm repo add cbeneke https://cbeneke.github.io/helm-charts
 $ helm repo update
 ```
 
