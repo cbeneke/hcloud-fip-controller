@@ -1,5 +1,10 @@
 name: Build
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   docker:
@@ -17,5 +22,5 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          push: false
-          tags: cbeneke/hcloud-fip-controller:latest
+          push: true
+          tags: cbeneke/hcloud-fip-controller:latest,cbeneke/hcloud-fip-controller:${{ github.ref_name }}
