@@ -40,6 +40,7 @@ func (controller *Controller) nodeAddressList(ctx context.Context, nodeAddressTy
 	// Try to get deployment pods if certain label is specified
 	listOptions := metav1.ListOptions{}
 	listOptions.LabelSelector = podLabelSelector
+	listOptions.FieldSelector = "status.phase=Running"
 	var pods *corev1.PodList
 
 	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
