@@ -1,0 +1,50 @@
+name: Helm
+on:
+  pull_request:
+    paths:
+      - "deploy/**"
+      - ".github/workflows/helm.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "deploy/**"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm lint
+        run: helm lint deploy --strict --set hcloudApiToken=dummy
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          version="v0.6.7"
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Render and validate manifests
+        run: |
+          set -euo pipefail
+          for kind in Deployment DaemonSet; do
+            echo "::group::Validate ${kind}"
+            helm template fip deploy \
+              --namespace fip-controller \
+              --set hcloudApiToken=dummy \
+              --set kind="${kind}" \
+              | kubeconform -strict -summary \
+                  -schema-location default \
+                  -kubernetes-version 1.30.0
+            echo "::endgroup::"
+          done

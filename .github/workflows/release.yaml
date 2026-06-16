@@ -17,6 +17,7 @@ on:
 permissions:
   contents: write
   pull-requests: read
+  packages: write
 
 concurrency:
   group: release
@@ -70,6 +71,9 @@ jobs:
           echo "next=${next}" >> "${GITHUB_OUTPUT}"
           echo "Releasing ${next} (previous ${latest}, bump ${bump})"
 
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -101,6 +105,15 @@ jobs:
           sed -i -E "s|^version:.*|version: ${chart_version}|" deploy/Chart.yaml
           sed -i -E "s|^appVersion:.*|appVersion: \"${chart_version}\"|" deploy/Chart.yaml
 
+      - name: Package and push Helm chart (OCI)
+        run: |
+          set -euo pipefail
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          echo "${{ github.token }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" --password-stdin
+          helm package deploy --destination dist
+          helm push dist/hcloud-fip-controller-*.tgz "oci://ghcr.io/${owner}/charts"
+
       - name: Commit chart version
         run: |
           set -euo pipefail
@@ -125,4 +138,5 @@ jobs:
           git push origin "${next}"
           gh release create "${next}" \
             --title "${next}" \
-            --generate-notes
+            --generate-notes \
+            dist/hcloud-fip-controller-*.tgz

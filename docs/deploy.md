@@ -6,8 +6,22 @@ bumped automatically on every release.
 
 ## Using helm
 
-Install the chart directly from a checkout of this repository. Provide your
-Hetzner Cloud API token and let the chart create the namespace:
+Every release publishes the chart as an OCI artifact to GitHub Container
+Registry. Install a released version directly:
+
+```
+$ helm install hcloud-fip-controller \
+    oci://ghcr.io/cbeneke/charts/hcloud-fip-controller \
+    --namespace fip-controller \
+    --create-namespace \
+    --set hcloudApiToken=<hcloud_api_token>
+```
+
+Use `--version <x.y.z>` to pin a specific chart version (the chart version
+matches the application version).
+
+Alternatively, install the chart directly from a checkout of this repository.
+Provide your Hetzner Cloud API token and let the chart create the namespace:
 
 ```
 $ helm install hcloud-fip-controller ./deploy \
