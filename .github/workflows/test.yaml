@@ -18,7 +18,7 @@ jobs:
           username: cbeneke
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: false
           tags: cbeneke/hcloud-fip-controller:dev

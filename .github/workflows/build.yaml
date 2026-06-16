@@ -18,7 +18,7 @@ jobs:
           username: cbeneke
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           platforms: linux/amd64,linux/arm64
