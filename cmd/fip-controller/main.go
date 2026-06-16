@@ -12,6 +12,9 @@ import (
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
 )
 
+// version is the controller version, overridable at build time via -ldflags.
+var version = "dev"
+
 func main() {
 	controllerConfig := &configuration.Configuration{}
 
@@ -36,7 +39,8 @@ func main() {
 	flag.DurationVar(&controllerConfig.BackoffDuration, "backoff-duration", time.Second, "Duration for first backoff")
 	flag.Float64Var(&controllerConfig.BackoffFactor, "backoff-factor", 1.2, "Factor for backoff increase")
 	flag.IntVar(&controllerConfig.BackoffSteps, "backoff-steps", 5, "Number of backoff retries")
-	flag.StringVar(&controllerConfig.HealthCheckAddress, "health-check-address", ":8080", "Address the health and readiness endpoints listen on")
+	flag.StringVar(&controllerConfig.HealthCheckAddress, "health-check-address", ":8080", "Address the health, readiness and metrics endpoints listen on")
+	flag.StringVar(&controllerConfig.OtelExporterOtlpEndpoint, "otel-exporter-otlp-endpoint", "", "OTLP endpoint for OpenTelemetry traces. Traces are only emitted when set")
 	// Parse options from file
 	if _, err := os.Stat("config/config.json"); err == nil {
 		if err := controllerConfig.VarsFromFile("config/config.json"); err != nil {
@@ -56,6 +60,18 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Initialise OpenTelemetry tracing. Traces are only emitted when an OTLP
+	// endpoint is configured; otherwise this is a no-op.
+	shutdownTracing, err := fipcontroller.InitTracing(ctx, controllerConfig.OtelExporterOtlpEndpoint, "hcloud-fip-controller", version)
+	if err != nil {
+		controller.Logger.Errorf("could not initialise tracing: %v", err)
+	}
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			controller.Logger.Errorf("could not shut down tracing: %v", err)
+		}
+	}()
 
 	// The health server reports liveness immediately. Readiness is only
 	// flipped on once the controller observes a leader (see onNewLeader),

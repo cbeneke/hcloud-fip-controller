@@ -61,6 +61,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: HEALTH_CHECK_ADDRESS
               value: ":{{ .Values.healthCheck.port }}"
+            {{- with .Values.monitoring.otelEndpoint }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ . | quote }}
+            {{- end }}
             {{- range $key, $value := .Values.config }}
             - name: {{ $key }}
               value: {{ $value | quote }}

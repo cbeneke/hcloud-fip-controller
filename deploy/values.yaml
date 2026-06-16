@@ -40,8 +40,22 @@ existingSecretName: ""
 config: {}
 
 healthCheck:
-  # Port the liveness/readiness endpoints listen on.
+  # Port the liveness/readiness and metrics endpoints listen on.
   port: 8080
+
+monitoring:
+  # OpenTelemetry OTLP endpoint for traces (e.g. "otel-collector:4317" or
+  # "http://otel-collector:4317"). Traces are only emitted when this is set.
+  otelEndpoint: ""
+  serviceMonitor:
+    # Create a Service and a Prometheus Operator ServiceMonitor for the
+    # /metrics endpoint. Requires the Prometheus Operator CRDs.
+    enabled: false
+    # Scrape interval. Empty uses the Prometheus default.
+    interval: ""
+    # Additional labels for the ServiceMonitor (e.g. to match your Prometheus
+    # serviceMonitorSelector).
+    labels: {}
 
 livenessProbe:
   httpGet:

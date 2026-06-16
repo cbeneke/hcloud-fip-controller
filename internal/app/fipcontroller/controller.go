@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
@@ -97,8 +100,23 @@ func (controller *Controller) Run(ctx context.Context) error {
 
 // UpdateFloatingIPs searches for running hetzner cloud servers and sort them by fewest assigned floating ips.
 // It then (re)assigns all unassigned ips or ips that are assigned to non running servers to the sorted running serves.
-func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
+func (controller *Controller) UpdateFloatingIPs(ctx context.Context) (err error) {
 	controller.Logger.Debugf("Checking floating IPs")
+
+	// Record reconcile metrics and trace for every run.
+	start := time.Now()
+	ctx, span := tracer().Start(ctx, "UpdateFloatingIPs")
+	defer func() {
+		reconcileDuration.Observe(time.Since(start).Seconds())
+		if err != nil {
+			reconcileTotal.WithLabelValues("error").Inc()
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			reconcileTotal.WithLabelValues("success").Inc()
+		}
+		span.End()
+	}()
 
 	// Get running servers for floating ip assignment
 	nodeAddressList, err := controller.nodeAddressList(ctx, controller.Configuration.NodeAddressType)
@@ -125,6 +143,12 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 		return fmt.Errorf("Could not get floatingIPs: %v", err)
 	}
 
+	managedFloatingIPs.Set(float64(len(floatingIPs)))
+	span.SetAttributes(
+		attribute.Int("floating_ips", len(floatingIPs)),
+		attribute.Int("running_servers", len(runningServers)),
+	)
+
 	for _, floatingIP := range floatingIPs {
 		controller.Logger.Debugf("Checking floating IP: %s", floatingIP.IP.String())
 
@@ -148,6 +172,12 @@ func (controller *Controller) UpdateFloatingIPs(ctx context.Context) error {
 			}
 			// Add placeholder floating ip to server so that findServerWithLowestFIP will always get a correct server
 			server.PublicNet.FloatingIPs = append(server.PublicNet.FloatingIPs, &hcloud.FloatingIP{})
+
+			reassignmentsTotal.Inc()
+			span.AddEvent("reassigned floating ip", trace.WithAttributes(
+				attribute.String("floating_ip", floatingIP.IP.String()),
+				attribute.String("server", server.Name),
+			))
 		}
 
 	}

@@ -7,4 +7,5 @@ You need to make sure, to have the IP Addresses configured on **every** node for
 # Table of Contents
 * [Configuration](configuration.md)
 * [Deploy to Kubernetes](deploy.md)
+* [Monitoring](monitoring.md)
 * [Running multiple controller](multiple_controller.md)

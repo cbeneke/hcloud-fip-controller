@@ -89,7 +89,11 @@ The most relevant chart values are:
 | `hcloudApiToken`    | `""`                           | Hetzner Cloud API token (creates a Secret)        |
 | `existingSecretName`| `""`                           | Use an existing secret with `HCLOUD_API_TOKEN`    |
 | `config`            | `{}`                           | Extra controller options as environment variables |
-| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness endpoints         |
+| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness/metrics endpoints |
+| `monitoring.otelEndpoint` | `""`                     | OTLP endpoint for traces (traces emitted only when set) |
+| `monitoring.serviceMonitor.enabled` | `false`       | Create a Service + Prometheus Operator ServiceMonitor |
+
+See [monitoring](./monitoring.md) for the exported metrics and tracing details.
 
 ## Manual installation
 
