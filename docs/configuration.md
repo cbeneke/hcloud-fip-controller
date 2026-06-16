@@ -18,7 +18,10 @@ Selector for floating ips in case not all floating ips should be used in the con
 More infos about hetzner label selectors can be found [here](https://docs.hetzner.cloud/#label-selector)
 
 * HEALTH_CHECK_ADDRESS, *default:* ":8080"
-Address the HTTP server exposing the `/healthz` (liveness) and `/readyz` (readiness) endpoints listens on. Used by the Kubernetes liveness and readiness probes.
+Address the HTTP server exposing the `/healthz` (liveness), `/readyz` (readiness) and `/metrics` (Prometheus) endpoints listens on. Used by the Kubernetes liveness and readiness probes and for metrics scraping.
+
+* OTEL_EXPORTER_OTLP_ENDPOINT
+OTLP endpoint for OpenTelemetry traces, e.g. `otel-collector:4317` or `http://otel-collector:4317`. Traces are only emitted when this is set; otherwise tracing is disabled. A bare `host:port` value defaults to the insecure (http) gRPC transport.
 
 * HCLOUD_API_TOKEN  
 API token for the hetzner cloud access.
@@ -71,6 +74,7 @@ Valid fields in the config.json file and their respective ENV variables are
   ],
   "hcloud_api_token": "<HCLOUD_API_TOKEN>",
   "health_check_address": "<HEALTH_CHECK_ADDRESS>",
+  "otel_exporter_otlp_endpoint": "<OTEL_EXPORTER_OTLP_ENDPOINT>",
   "lease_duration": "<LEASE_DURATION>",
   "lease_name": "<LEASE_NAME>",
   "log_level": "<LOG_LEVEL>",

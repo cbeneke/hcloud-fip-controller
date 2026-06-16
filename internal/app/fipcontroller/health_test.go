@@ -8,6 +8,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func TestMetricsEndpoint(t *testing.T) {
+	health := NewHealthServer(":0", logrus.New())
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+
+	health.server.Handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d but got %d", http.StatusOK, recorder.Code)
+	}
+}
+
 func TestHealthzHandler(t *testing.T) {
 	health := NewHealthServer(":0", logrus.New())
 

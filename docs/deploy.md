@@ -120,7 +120,11 @@ The most relevant chart values are:
 | `floatingIPs`       | `[]`                           | Floating IPs to manage; required unless autodiscovery |
 | `floatingIPAutodiscovery` | `false`                  | Auto-discover floating IPs instead of an explicit list |
 | `config`            | `{}`                           | Extra controller options as environment variables |
-| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness endpoints         |
+| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness/metrics endpoints |
+| `monitoring.otelEndpoint` | `""`                     | OTLP endpoint for traces (traces emitted only when set) |
+| `monitoring.serviceMonitor.enabled` | `false`       | Create a Service + Prometheus Operator ServiceMonitor |
+
+See [monitoring](./monitoring.md) for the exported metrics and tracing details.
 
 ## Manual installation
 

@@ -53,6 +53,7 @@ func (controller *Controller) RunWithLeaderElection(ctx context.Context) {
 
 func (controller *Controller) onStartedLeading(ctx context.Context) {
 	controller.Logger.Info("Started leading")
+	leaderGauge.Set(1)
 	err := controller.Run(ctx)
 	if err != nil {
 		controller.Logger.Fatalf("Could not run controller: %v", err)
@@ -61,6 +62,7 @@ func (controller *Controller) onStartedLeading(ctx context.Context) {
 
 func (controller *Controller) onStoppedLeading() {
 	controller.Logger.Info("Stopped leading")
+	leaderGauge.Set(0)
 }
 
 // onNewLeader fires on every participant the first time a leader is observed,

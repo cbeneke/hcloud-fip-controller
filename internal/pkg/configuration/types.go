@@ -26,6 +26,9 @@ type Configuration struct {
 	BackoffFactor           float64          `json:"backoff_factor,omitempty"`
 	BackoffSteps            int              `json:"backoff_steps,omitempty"`
 	HealthCheckAddress      string           `json:"health_check_address,omitempty"`
+	// OtelExporterOtlpEndpoint enables OpenTelemetry trace export when set.
+	// Maps to the standard OTEL_EXPORTER_OTLP_ENDPOINT environment variable.
+	OtelExporterOtlpEndpoint string `json:"otel_exporter_otlp_endpoint,omitempty"`
 }
 
 // Set of string flags
