@@ -91,23 +91,26 @@ jobs:
             cbeneke/hcloud-fip-controller:latest
             cbeneke/hcloud-fip-controller:${{ steps.version.outputs.next }}
 
-      - name: Update deploy manifests
+      - name: Bump chart version
         run: |
           set -euo pipefail
           next="${{ steps.version.outputs.next }}"
-          sed -i -E "s|(image: cbeneke/hcloud-fip-controller:)[^[:space:]]+|\1${next}|" \
-            deploy/deployment.yaml deploy/daemonset.yaml
+          # Helm chart versions are SemVer without a leading "v". The chart
+          # version and appVersion are kept in lockstep.
+          chart_version="${next#v}"
+          sed -i -E "s|^version:.*|version: ${chart_version}|" deploy/Chart.yaml
+          sed -i -E "s|^appVersion:.*|appVersion: \"${chart_version}\"|" deploy/Chart.yaml
 
-      - name: Commit deploy manifests
+      - name: Commit chart version
         run: |
           set -euo pipefail
           next="${{ steps.version.outputs.next }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- deploy; then
-            echo "No deploy changes to commit"
+          if git diff --quiet -- deploy/Chart.yaml; then
+            echo "No chart changes to commit"
           else
-            git add deploy/deployment.yaml deploy/daemonset.yaml
+            git add deploy/Chart.yaml
             git commit -m "chore(release): ${next} [skip ci]"
             git push origin HEAD:main
           fi

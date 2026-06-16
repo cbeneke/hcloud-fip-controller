@@ -1,50 +1,90 @@
 # Deploy to kubernetes
+
+The controller ships as a Helm chart in the [`deploy/`](../deploy) folder of
+this repository. The chart version and `appVersion` are kept in lockstep and
+bumped automatically on every release.
+
 ## Using helm
 
-Install helm in the latest version and add the cbeneke/helm-charts repo
+Install the chart directly from a checkout of this repository. Provide your
+Hetzner Cloud API token and let the chart create the namespace:
 
 ```
-$ helm repo add cbeneke https://cbeneke.github.io/helm-charts
-$ helm repo update
+$ helm install hcloud-fip-controller ./deploy \
+    --namespace fip-controller \
+    --create-namespace \
+    --set hcloudApiToken=<hcloud_api_token>
 ```
 
-Then configure and install the chart
+Alternatively, supply your own values file:
 
 ```
-# When using helm v3:
-$ helm install hcloud-fip-controller -f values.yaml cbeneke/hcloud-fip-controller
-
-# OR helm v2:
-$ helm install --name hcloud-fip-controller -f values.yaml cbeneke/hcloud-fip-controller
+$ helm install hcloud-fip-controller ./deploy \
+    --namespace fip-controller \
+    --create-namespace \
+    -f values.yaml
 ```
 
-Please refer to the [helm-charts repo](https://github.com/cbeneke/helm-charts/tree/master/charts/hcloud-fip-controller#configuration)
-which config options are available.
+### Using an existing secret
 
-## Manual installation
-You can install the deployment in a kubernetes cluster with the
-following commands
+If you manage the API token yourself, point the chart at an existing secret
+that contains an `HCLOUD_API_TOKEN` key instead of letting the chart create one:
 
 ```
-$ kubectl create namespace fip-controller
-$ kubectl apply -f deploy/rbac.yaml
-$ kubectl apply -f deploy/deployment.yaml
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: fip-controller-secrets
-  namespace: fip-controller
-stringData:
-  HCLOUD_API_TOKEN: <hcloud_api_token>
+$ helm install hcloud-fip-controller ./deploy \
+    --namespace fip-controller \
+    --create-namespace \
+    --set existingSecretName=my-hcloud-secret
 ```
-
-If you want to use a configmap to configure your application you can comment out the corresponding lines in the deployment/daemonset.
-Please refer to the [configmap options](./configuration.md#configjson-fields) to see which options are available.
 
 ### Using a DaemonSet
 
-Alternatively, you can run the controller as a DaemonSet. This ensures
-one controller will run on each worker node. Instead of using the
-`deployment.yaml` file apply the `daemonset.yaml` file from the deploy
-folder.
+By default the controller runs as a `Deployment` with 3 replicas. To run one
+controller per node, deploy it as a `DaemonSet` instead:
+
+```
+$ helm install hcloud-fip-controller ./deploy \
+    --namespace fip-controller \
+    --create-namespace \
+    --set kind=DaemonSet \
+    --set hcloudApiToken=<hcloud_api_token>
+```
+
+### Configuration
+
+All controller options can be passed as environment variables through the
+`config` map in the values. See the [configuration options](./configuration.md)
+for the full list. Example `values.yaml`:
+
+```yaml
+hcloudApiToken: <hcloud_api_token>
+
+config:
+  NODE_ADDRESS_TYPE: external
+  LOG_LEVEL: Info
+```
+
+The most relevant chart values are:
+
+| Value               | Default                        | Description                                       |
+|---------------------|--------------------------------|---------------------------------------------------|
+| `kind`              | `Deployment`                   | Workload kind (`Deployment` or `DaemonSet`)       |
+| `replicaCount`      | `3`                            | Replicas (Deployment only)                        |
+| `image.repository`  | `cbeneke/hcloud-fip-controller`| Container image repository                        |
+| `image.tag`         | `""`                           | Image tag, defaults to `v<appVersion>`            |
+| `hcloudApiToken`    | `""`                           | Hetzner Cloud API token (creates a Secret)        |
+| `existingSecretName`| `""`                           | Use an existing secret with `HCLOUD_API_TOKEN`    |
+| `config`            | `{}`                           | Extra controller options as environment variables |
+| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness endpoints         |
+
+## Manual installation
+
+If you prefer not to use Tiller/Helm releases, render the chart and apply the
+manifests directly:
+
+```
+$ kubectl create namespace fip-controller
+$ helm template hcloud-fip-controller ./deploy \
+    --namespace fip-controller \
+    --set hcloudApiToken=<hcloud_api_token> | kubectl apply -f -
+```
