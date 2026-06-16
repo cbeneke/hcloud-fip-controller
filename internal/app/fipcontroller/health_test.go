@@ -21,6 +21,24 @@ func TestHealthzHandler(t *testing.T) {
 	}
 }
 
+func TestOnNewLeaderSetsReady(t *testing.T) {
+	health := NewHealthServer(":0", logrus.New())
+	controller := Controller{
+		Logger:       logrus.New(),
+		HealthServer: health,
+	}
+
+	if health.ready.Load() {
+		t.Fatal("health server should not be ready before a leader is observed")
+	}
+
+	controller.onNewLeader("some-leader")
+
+	if !health.ready.Load() {
+		t.Fatal("health server should be ready after a leader is observed")
+	}
+}
+
 func TestReadyzHandler(t *testing.T) {
 	tests := []struct {
 		name       string

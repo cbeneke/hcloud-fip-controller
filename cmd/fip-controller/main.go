@@ -57,15 +57,16 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// The health server reports liveness immediately. Readiness is only
+	// flipped on once the controller observes a leader (see onNewLeader),
+	// i.e. once leader election is actually working.
 	healthServer := fipcontroller.NewHealthServer(controllerConfig.HealthCheckAddress, controller.Logger)
+	controller.HealthServer = healthServer
 	go func() {
 		if err := healthServer.Run(ctx); err != nil {
 			controller.Logger.Errorf("health server stopped: %v", err)
 		}
 	}()
-	// Clients are initialised and the controller is about to join leader
-	// election, so it is ready to serve traffic.
-	healthServer.SetReady(true)
 
 	controller.RunWithLeaderElection(ctx)
 }
