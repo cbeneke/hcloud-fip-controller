@@ -1,3 +1,9 @@
+{{- if and (not .Values.hcloudApiToken) (not .Values.existingSecretName) }}
+{{- fail "A Hetzner Cloud API token is required: set `hcloudApiToken` or point `existingSecretName` at a secret containing an HCLOUD_API_TOKEN key." }}
+{{- end }}
+{{- if and (not .Values.floatingIPs) (not .Values.floatingIPAutodiscovery) }}
+{{- fail "No floating IPs configured: set `floatingIPs` to the addresses to manage, or set `floatingIPAutodiscovery: true` to auto-discover them from the Hetzner Cloud API." }}
+{{- end }}
 apiVersion: apps/v1
 kind: {{ .Values.kind }}
 metadata:
@@ -68,10 +74,22 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "hcloud-fip-controller.secretName" . }}
+          {{- if .Values.floatingIPs }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+      {{- if .Values.floatingIPs }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "hcloud-fip-controller.fullname" . }}-config
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
