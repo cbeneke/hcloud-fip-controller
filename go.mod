@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/hetznercloud/hcloud-go v1.59.2
+	github.com/hetznercloud/hcloud-go/v2 v2.43.0
 	github.com/namsral/flag v1.7.4-pre
 	github.com/sirupsen/logrus v1.9.4
 	k8s.io/api v0.36.2
