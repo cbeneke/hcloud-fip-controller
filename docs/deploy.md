@@ -6,12 +6,12 @@ bumped automatically on every release.
 
 ## Using helm
 
-Every release publishes the chart as an OCI artifact to GitHub Container
-Registry. Install a released version directly:
+Every release publishes the chart as an OCI artifact to Docker Hub. Install a
+released version directly:
 
 ```
 $ helm install hcloud-fip-controller \
-    oci://ghcr.io/cbeneke/charts/hcloud-fip-controller \
+    oci://registry-1.docker.io/cbeneke/hcloud-fip-controller \
     --namespace fip-controller \
     --create-namespace \
     --set hcloudApiToken=<hcloud_api_token>

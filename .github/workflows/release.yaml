@@ -17,7 +17,6 @@ on:
 permissions:
   contents: write
   pull-requests: read
-  packages: write
 
 concurrency:
   group: release
@@ -108,11 +107,10 @@ jobs:
       - name: Package and push Helm chart (OCI)
         run: |
           set -euo pipefail
-          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          echo "${{ github.token }}" | helm registry login ghcr.io \
-            --username "${{ github.actor }}" --password-stdin
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | helm registry login registry-1.docker.io \
+            --username cbeneke --password-stdin
           helm package deploy --destination dist
-          helm push dist/hcloud-fip-controller-*.tgz "oci://ghcr.io/${owner}/charts"
+          helm push dist/hcloud-fip-controller-*.tgz "oci://registry-1.docker.io/cbeneke"
 
       - name: Commit chart version
         run: |
