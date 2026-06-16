@@ -1,0 +1,106 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which version part to bump"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: version
+        run: |
+          set -euo pipefail
+          bump="${{ github.event.inputs.bump || 'patch' }}"
+          latest="$(git tag --sort=-v:refname | head -n1)"
+          if [ -z "${latest}" ]; then
+            latest="v0.0.0"
+          fi
+          version="${latest#v}"
+          IFS='.' read -r major minor patch <<< "${version}"
+          case "${bump}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          next="v${major}.${minor}.${patch}"
+          echo "previous=${latest}" >> "${GITHUB_OUTPUT}"
+          echo "next=${next}" >> "${GITHUB_OUTPUT}"
+          echo "Releasing ${next} (previous ${latest}, bump ${bump})"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: cbeneke
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            cbeneke/hcloud-fip-controller:latest
+            cbeneke/hcloud-fip-controller:${{ steps.version.outputs.next }}
+
+      - name: Update deploy manifests
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          sed -i -E "s|(image: cbeneke/hcloud-fip-controller:)[^[:space:]]+|\1${next}|" \
+            deploy/deployment.yaml deploy/daemonset.yaml
+
+      - name: Commit deploy manifests
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- deploy; then
+            echo "No deploy changes to commit"
+          else
+            git add deploy/deployment.yaml deploy/daemonset.yaml
+            git commit -m "chore(release): ${next} [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          git tag "${next}"
+          git push origin "${next}"
+          gh release create "${next}" \
+            --title "${next}" \
+            --generate-notes
