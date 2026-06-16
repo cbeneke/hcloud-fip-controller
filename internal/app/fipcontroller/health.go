@@ -6,11 +6,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
-// HealthServer exposes liveness (/healthz) and readiness (/readyz) HTTP
-// endpoints used by Kubernetes probes.
+// HealthServer exposes liveness (/healthz), readiness (/readyz) and Prometheus
+// metrics (/metrics) HTTP endpoints.
 //
 // Liveness reports whether the process is up and able to serve requests.
 // Readiness reports whether the controller has finished its initialisation
@@ -28,6 +29,7 @@ func NewHealthServer(address string, logger *logrus.Logger) *HealthServer {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", health.healthzHandler)
 	mux.HandleFunc("/readyz", health.readyzHandler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	health.server = &http.Server{
 		Addr:              address,

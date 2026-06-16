@@ -42,10 +42,12 @@ jobs:
             exit 0
           fi
 
+          # A "dependencies" label (added automatically by Renovate) counts as
+          # a patch release, so no suggestion is needed in that case either.
           current="$(gh pr view "${PR}" --repo "${REPO}" --json labels \
-            --jq '[.labels[].name | select(. == "patch" or . == "minor" or . == "major")] | length')"
+            --jq '[.labels[].name | select(. == "patch" or . == "minor" or . == "major" or . == "dependencies")] | length')"
           if [ "${current}" != "0" ]; then
-            echo "Semver label already present, leaving it untouched."
+            echo "Semver (or dependencies) label already present, leaving it untouched."
             exit 0
           fi
 
@@ -87,16 +89,26 @@ jobs:
 
           labels="$(gh pr view "${PR}" --repo "${REPO}" --json labels \
             --jq '[.labels[].name | select(. == "patch" or . == "minor" or . == "major")] | join(" ")')"
+          deps="$(gh pr view "${PR}" --repo "${REPO}" --json labels \
+            --jq '[.labels[].name | select(. == "dependencies")] | length')"
           count="$(echo ${labels} | wc -w | tr -d ' ')"
+
+          if [ "${count}" -gt 1 ]; then
+            echo "::error::Multiple semver labels set (${labels}). Keep exactly one of: patch, minor, major."
+            exit 1
+          fi
 
           if [ "${count}" -eq 1 ]; then
             echo "Found semver label: ${labels}"
             exit 0
           fi
 
-          if [ "${count}" -eq 0 ]; then
-            echo "::error::No semver label set. Add exactly one of: patch, minor, major."
-          else
-            echo "::error::Multiple semver labels set (${labels}). Keep exactly one of: patch, minor, major."
+          # No explicit semver label: a "dependencies" label (e.g. from
+          # Renovate) is treated as a patch release.
+          if [ "${deps}" != "0" ]; then
+            echo "Found dependencies label, treated as a patch release."
+            exit 0
           fi
+
+          echo "::error::No semver label set. Add exactly one of: patch, minor, major (or 'dependencies' for a patch release)."
           exit 1

@@ -14,20 +14,28 @@ $ helm install hcloud-fip-controller \
     oci://registry-1.docker.io/cbeneke/hcloud-fip-controller \
     --namespace fip-controller \
     --create-namespace \
-    --set hcloudApiToken=<hcloud_api_token>
+    --set hcloudApiToken=<hcloud_api_token> \
+    --set 'floatingIPs={1.2.3.4}'
 ```
 
 Use `--version <x.y.z>` to pin a specific chart version (the chart version
 matches the application version).
 
+The chart **requires** a Hetzner Cloud API token and the floating IPs to
+manage. Installation fails fast if neither `hcloudApiToken` nor
+`existingSecretName` is set, or if `floatingIPs` is empty and
+`floatingIPAutodiscovery` is not enabled.
+
 Alternatively, install the chart directly from a checkout of this repository.
-Provide your Hetzner Cloud API token and let the chart create the namespace:
+Provide your Hetzner Cloud API token and floating IPs, and let the chart create
+the namespace:
 
 ```
 $ helm install hcloud-fip-controller ./deploy \
     --namespace fip-controller \
     --create-namespace \
-    --set hcloudApiToken=<hcloud_api_token>
+    --set hcloudApiToken=<hcloud_api_token> \
+    --set 'floatingIPs={1.2.3.4}'
 ```
 
 Alternatively, supply your own values file:
@@ -48,7 +56,28 @@ that contains an `HCLOUD_API_TOKEN` key instead of letting the chart create one:
 $ helm install hcloud-fip-controller ./deploy \
     --namespace fip-controller \
     --create-namespace \
-    --set existingSecretName=my-hcloud-secret
+    --set existingSecretName=my-hcloud-secret \
+    --set 'floatingIPs={1.2.3.4}'
+```
+
+### Floating IPs
+
+The floating IPs to manage are configured via the `floatingIPs` list. The chart
+renders them into a ConfigMap (`config.json`) that is mounted into the
+controller:
+
+```yaml
+floatingIPs:
+  - 1.2.3.4
+  - 2001:db8::1
+```
+
+To let the controller auto-discover floating IPs from the Hetzner Cloud API
+instead of managing an explicit list, leave `floatingIPs` empty and opt in
+explicitly:
+
+```yaml
+floatingIPAutodiscovery: true
 ```
 
 ### Using a DaemonSet
@@ -86,10 +115,16 @@ The most relevant chart values are:
 | `replicaCount`      | `3`                            | Replicas (Deployment only)                        |
 | `image.repository`  | `cbeneke/hcloud-fip-controller`| Container image repository                        |
 | `image.tag`         | `""`                           | Image tag, defaults to `v<appVersion>`            |
-| `hcloudApiToken`    | `""`                           | Hetzner Cloud API token (creates a Secret)        |
+| `hcloudApiToken`    | `""`                           | Hetzner Cloud API token, required (creates a Secret) |
 | `existingSecretName`| `""`                           | Use an existing secret with `HCLOUD_API_TOKEN`    |
+| `floatingIPs`       | `[]`                           | Floating IPs to manage; required unless autodiscovery |
+| `floatingIPAutodiscovery` | `false`                  | Auto-discover floating IPs instead of an explicit list |
 | `config`            | `{}`                           | Extra controller options as environment variables |
-| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness endpoints         |
+| `healthCheck.port`  | `8080`                         | Port for the liveness/readiness/metrics endpoints |
+| `monitoring.otelEndpoint` | `""`                     | OTLP endpoint for traces (traces emitted only when set) |
+| `monitoring.serviceMonitor.enabled` | `false`       | Create a Service + Prometheus Operator ServiceMonitor |
+
+See [monitoring](./monitoring.md) for the exported metrics and tracing details.
 
 ## Manual installation
 
@@ -100,5 +135,6 @@ manifests directly:
 $ kubectl create namespace fip-controller
 $ helm template hcloud-fip-controller ./deploy \
     --namespace fip-controller \
-    --set hcloudApiToken=<hcloud_api_token> | kubectl apply -f -
+    --set hcloudApiToken=<hcloud_api_token> \
+    --set 'floatingIPs={1.2.3.4}' | kubectl apply -f -
 ```

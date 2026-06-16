@@ -24,12 +24,26 @@ rbac:
   # Create the ClusterRole and ClusterRoleBinding required by the controller.
   create: true
 
-# Hetzner Cloud API token. When set (and existingSecretName is empty), a Secret
-# holding HCLOUD_API_TOKEN is created by the chart.
+# Hetzner Cloud API token (REQUIRED). When set (and existingSecretName is
+# empty), a Secret holding HCLOUD_API_TOKEN is created by the chart.
+# Either hcloudApiToken or existingSecretName must be provided.
 hcloudApiToken: ""
 # Name of an existing secret containing an HCLOUD_API_TOKEN key. When set, the
 # chart will not create its own secret.
 existingSecretName: ""
+
+# Floating IPs to manage (REQUIRED unless floatingIPAutodiscovery is true).
+# Rendered into a ConfigMap (config.json) that is mounted into the controller.
+# IPv6 may be any address of the /64 net. Example:
+#   floatingIPs:
+#     - 1.2.3.4
+#     - 2001:db8::1
+floatingIPs: []
+
+# When true, the controller auto-discovers floating IPs from the Hetzner Cloud
+# API and floatingIPs may be left empty. Set this explicitly to opt out of
+# managing an explicit list.
+floatingIPAutodiscovery: false
 
 # Additional controller configuration rendered as environment variables.
 # See docs/configuration.md for all available options. Example:
@@ -40,8 +54,22 @@ existingSecretName: ""
 config: {}
 
 healthCheck:
-  # Port the liveness/readiness endpoints listen on.
+  # Port the liveness/readiness and metrics endpoints listen on.
   port: 8080
+
+monitoring:
+  # OpenTelemetry OTLP endpoint for traces (e.g. "otel-collector:4317" or
+  # "http://otel-collector:4317"). Traces are only emitted when this is set.
+  otelEndpoint: ""
+  serviceMonitor:
+    # Create a Service and a Prometheus Operator ServiceMonitor for the
+    # /metrics endpoint. Requires the Prometheus Operator CRDs.
+    enabled: false
+    # Scrape interval. Empty uses the Prometheus default.
+    interval: ""
+    # Additional labels for the ServiceMonitor (e.g. to match your Prometheus
+    # serviceMonitorSelector).
+    labels: {}
 
 livenessProbe:
   httpGet:
