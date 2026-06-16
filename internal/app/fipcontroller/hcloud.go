@@ -6,7 +6,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	"net"
 
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
 
 func newHetznerClient(token string) (*hcloud.Client, error) {
