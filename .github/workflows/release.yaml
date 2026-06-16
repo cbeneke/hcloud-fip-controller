@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: release
@@ -32,9 +33,27 @@ jobs:
 
       - name: Determine next version
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          bump="${{ github.event.inputs.bump || 'patch' }}"
+          bump=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            bump="${{ github.event.inputs.bump }}"
+          else
+            # Read the semver label from the PR associated with this merge commit.
+            labels="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+              --jq '.[].labels[].name' 2>/dev/null || true)"
+            for label in ${labels}; do
+              case "${label}" in
+                major|minor|patch) bump="${label}" ;;
+              esac
+            done
+          fi
+          if [ -z "${bump}" ]; then
+            echo "No semver label found; defaulting to patch"
+            bump="patch"
+          fi
           latest="$(git tag --sort=-v:refname | head -n1)"
           if [ -z "${latest}" ]; then
             latest="v0.0.0"

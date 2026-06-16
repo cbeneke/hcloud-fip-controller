@@ -1,0 +1,102 @@
+name: Semver label
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: semver-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Anthropic model used for AI label suggestion. Only used when the
+  # ANTHROPIC_API_KEY secret is configured.
+  AI_MODEL: claude-3-5-haiku-latest
+
+jobs:
+  semver-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Suggest label with AI
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "ANTHROPIC_API_KEY not set, skipping AI suggestion."
+            exit 0
+          fi
+
+          current="$(gh pr view "${PR}" --repo "${REPO}" --json labels \
+            --jq '[.labels[].name | select(. == "patch" or . == "minor" or . == "major")] | length')"
+          if [ "${current}" != "0" ]; then
+            echo "Semver label already present, leaving it untouched."
+            exit 0
+          fi
+
+          title="$(gh pr view "${PR}" --repo "${REPO}" --json title --jq .title)"
+          body="$(gh pr view "${PR}" --repo "${REPO}" --json body --jq '.body // ""')"
+          files="$(gh pr view "${PR}" --repo "${REPO}" --json files --jq '[.files[].path] | join("\n")')"
+
+          prompt=$(printf 'You assign a semantic-version bump label to a pull request. Reply with exactly one lowercase word and nothing else: major, minor, or patch.\n- major: backwards-incompatible/breaking changes\n- minor: new backwards-compatible features\n- patch: bug fixes, docs, chores, refactors, tests, dependency or CI changes\n\nTitle: %s\n\nChanged files:\n%s\n\nDescription:\n%s\n' "${title}" "${files}" "${body}")
+
+          payload="$(jq -n --arg model "${AI_MODEL}" --arg prompt "${prompt}" \
+            '{model: $model, max_tokens: 10, messages: [{role: "user", content: $prompt}]}')"
+
+          response="$(curl -sS https://api.anthropic.com/v1/messages \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "${payload}")"
+
+          suggestion="$(echo "${response}" | jq -r '.content[0].text // ""' \
+            | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z')"
+
+          case "${suggestion}" in
+            major|minor|patch)
+              echo "AI suggested '${suggestion}', applying label."
+              gh pr edit "${PR}" --repo "${REPO}" --add-label "${suggestion}"
+              ;;
+            *)
+              echo "AI did not return a valid label (got: '${suggestion}'). Leaving for manual selection."
+              ;;
+          esac
+
+      - name: Enforce exactly one semver label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          labels="$(gh pr view "${PR}" --repo "${REPO}" --json labels \
+            --jq '[.labels[].name | select(. == "patch" or . == "minor" or . == "major")] | join(" ")')"
+          count="$(echo ${labels} | wc -w | tr -d ' ')"
+
+          if [ "${count}" -eq 1 ]; then
+            echo "Found semver label: ${labels}"
+            exit 0
+          fi
+
+          if [ "${count}" -eq 0 ]; then
+            echo "::error::No semver label set. Add exactly one of: patch, minor, major."
+          else
+            echo "::error::Multiple semver labels set (${labels}). Keep exactly one of: patch, minor, major."
+          fi
+          exit 1
