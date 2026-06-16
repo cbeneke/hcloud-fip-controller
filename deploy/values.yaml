@@ -1,0 +1,72 @@
+# Workload kind to deploy. Either "Deployment" or "DaemonSet".
+kind: Deployment
+
+# Number of replicas. Only used when kind is "Deployment".
+replicaCount: 3
+
+image:
+  repository: cbeneke/hcloud-fip-controller
+  # Image tag. When empty it defaults to "v<chart appVersion>".
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  # Name of the service account to use. Generated from the fullname when empty.
+  name: ""
+
+rbac:
+  # Create the ClusterRole and ClusterRoleBinding required by the controller.
+  create: true
+
+# Hetzner Cloud API token. When set (and existingSecretName is empty), a Secret
+# holding HCLOUD_API_TOKEN is created by the chart.
+hcloudApiToken: ""
+# Name of an existing secret containing an HCLOUD_API_TOKEN key. When set, the
+# chart will not create its own secret.
+existingSecretName: ""
+
+# Additional controller configuration rendered as environment variables.
+# See docs/configuration.md for all available options. Example:
+#   config:
+#     NODE_ADDRESS_TYPE: external
+#     LOG_LEVEL: Info
+#     HCLOUD_FLOATING_IP: 1.2.3.4
+config: {}
+
+healthCheck:
+  # Port the liveness/readiness endpoints listen on.
+  port: 8080
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# Update strategy. Only used when kind is "Deployment".
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 1
+
+resources: {}
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

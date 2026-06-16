@@ -1,0 +1,41 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hcloud-fip-controller.fullname" . }}
+  labels:
+    {{- include "hcloud-fip-controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - update
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "hcloud-fip-controller.fullname" . }}
+  labels:
+    {{- include "hcloud-fip-controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "hcloud-fip-controller.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "hcloud-fip-controller.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

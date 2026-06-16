@@ -1,0 +1,19 @@
+{{ .Chart.Name }} {{ .Chart.AppVersion }} has been deployed as a {{ .Values.kind }}.
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if and (not .Values.existingSecretName) (not .Values.hcloudApiToken) }}
+
+WARNING: No Hetzner Cloud API token was configured.
+The controller expects a secret named "{{ include "hcloud-fip-controller.secretName" . }}"
+with an HCLOUD_API_TOKEN key. Set `hcloudApiToken` or `existingSecretName` in
+your values, or create the secret manually:
+
+  kubectl -n {{ .Release.Namespace }} create secret generic {{ include "hcloud-fip-controller.secretName" . }} \
+    --from-literal=HCLOUD_API_TOKEN=<your-token>
+{{- end }}
+
+Check the controller status with:
+
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}

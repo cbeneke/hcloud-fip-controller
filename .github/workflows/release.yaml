@@ -1,0 +1,140 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which version part to bump"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bump=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            bump="${{ github.event.inputs.bump }}"
+          else
+            # Read the semver label from the PR associated with this merge commit.
+            labels="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+              --jq '.[].labels[].name' 2>/dev/null || true)"
+            for label in ${labels}; do
+              case "${label}" in
+                major|minor|patch) bump="${label}" ;;
+              esac
+            done
+          fi
+          if [ -z "${bump}" ]; then
+            echo "No semver label found; defaulting to patch"
+            bump="patch"
+          fi
+          latest="$(git tag --sort=-v:refname | head -n1)"
+          if [ -z "${latest}" ]; then
+            latest="v0.0.0"
+          fi
+          version="${latest#v}"
+          IFS='.' read -r major minor patch <<< "${version}"
+          case "${bump}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          next="v${major}.${minor}.${patch}"
+          echo "previous=${latest}" >> "${GITHUB_OUTPUT}"
+          echo "next=${next}" >> "${GITHUB_OUTPUT}"
+          echo "Releasing ${next} (previous ${latest}, bump ${bump})"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: cbeneke
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            cbeneke/hcloud-fip-controller:latest
+            cbeneke/hcloud-fip-controller:${{ steps.version.outputs.next }}
+
+      - name: Bump chart version
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          # Helm chart versions are SemVer without a leading "v". The chart
+          # version and appVersion are kept in lockstep.
+          chart_version="${next#v}"
+          sed -i -E "s|^version:.*|version: ${chart_version}|" deploy/Chart.yaml
+          sed -i -E "s|^appVersion:.*|appVersion: \"${chart_version}\"|" deploy/Chart.yaml
+
+      - name: Package and push Helm chart (OCI)
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | helm registry login registry-1.docker.io \
+            --username cbeneke --password-stdin
+          helm package deploy --destination dist
+          helm push dist/hcloud-fip-controller-*.tgz "oci://registry-1.docker.io/cbeneke"
+
+      - name: Commit chart version
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- deploy/Chart.yaml; then
+            echo "No chart changes to commit"
+          else
+            git add deploy/Chart.yaml
+            git commit -m "chore(release): ${next} [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          git tag "${next}"
+          git push origin "${next}"
+          gh release create "${next}" \
+            --title "${next}" \
+            --generate-notes \
+            dist/hcloud-fip-controller-*.tgz
