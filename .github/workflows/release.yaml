@@ -71,7 +71,7 @@ jobs:
           echo "Releasing ${next} (previous ${latest}, bump ${bump})"
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
