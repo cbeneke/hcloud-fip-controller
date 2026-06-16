@@ -48,7 +48,7 @@ func TestValidate(t *testing.T) {
 				conf.HcloudAPIToken = ""
 				return conf
 			},
-			err: fmt.Errorf(errorPrefix + "hetzner cloud API token"),
+			err: fmt.Errorf("%shetzner cloud API token", errorPrefix),
 		},
 		{
 			name: "test no node name",
@@ -57,7 +57,7 @@ func TestValidate(t *testing.T) {
 				conf.NodeName = ""
 				return conf
 			},
-			err: fmt.Errorf(errorPrefix + "kubernetes node name"),
+			err: fmt.Errorf("%skubernetes node name", errorPrefix),
 		},
 		{
 			name: "test no namespace",
@@ -66,7 +66,7 @@ func TestValidate(t *testing.T) {
 				conf.Namespace = ""
 				return conf
 			},
-			err: fmt.Errorf(errorPrefix + "kubernetes namespace"),
+			err: fmt.Errorf("%skubernetes namespace", errorPrefix),
 		},
 		{
 			name: "test lease duration too small and smaller the deadline",
