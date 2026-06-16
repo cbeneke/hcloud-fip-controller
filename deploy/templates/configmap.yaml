@@ -1,0 +1,12 @@
+{{- if .Values.floatingIPs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hcloud-fip-controller.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "hcloud-fip-controller.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {{- dict "hcloud_floating_ips" .Values.floatingIPs | toPrettyJson | nindent 4 }}
+{{- end }}

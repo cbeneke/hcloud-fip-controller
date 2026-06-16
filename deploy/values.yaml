@@ -24,12 +24,26 @@ rbac:
   # Create the ClusterRole and ClusterRoleBinding required by the controller.
   create: true
 
-# Hetzner Cloud API token. When set (and existingSecretName is empty), a Secret
-# holding HCLOUD_API_TOKEN is created by the chart.
+# Hetzner Cloud API token (REQUIRED). When set (and existingSecretName is
+# empty), a Secret holding HCLOUD_API_TOKEN is created by the chart.
+# Either hcloudApiToken or existingSecretName must be provided.
 hcloudApiToken: ""
 # Name of an existing secret containing an HCLOUD_API_TOKEN key. When set, the
 # chart will not create its own secret.
 existingSecretName: ""
+
+# Floating IPs to manage (REQUIRED unless floatingIPAutodiscovery is true).
+# Rendered into a ConfigMap (config.json) that is mounted into the controller.
+# IPv6 may be any address of the /64 net. Example:
+#   floatingIPs:
+#     - 1.2.3.4
+#     - 2001:db8::1
+floatingIPs: []
+
+# When true, the controller auto-discovers floating IPs from the Hetzner Cloud
+# API and floatingIPs may be left empty. Set this explicitly to opt out of
+# managing an explicit list.
+floatingIPAutodiscovery: false
 
 # Additional controller configuration rendered as environment variables.
 # See docs/configuration.md for all available options. Example:
