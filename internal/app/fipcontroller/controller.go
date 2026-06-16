@@ -24,6 +24,7 @@ type Controller struct {
 	Configuration    *configuration.Configuration
 	Logger           *logrus.Logger
 	Backoff          wait.Backoff
+	HealthServer     *HealthServer
 }
 
 // NewController creates a new Controller and with it the client configurations and loggers

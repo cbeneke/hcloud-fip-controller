@@ -25,6 +25,7 @@ type Configuration struct {
 	BackoffDuration         time.Duration    `json:"backoff_duration,omitempty"`
 	BackoffFactor           float64          `json:"backoff_factor,omitempty"`
 	BackoffSteps            int              `json:"backoff_steps,omitempty"`
+	HealthCheckAddress      string           `json:"health_check_address,omitempty"`
 }
 
 // Set of string flags

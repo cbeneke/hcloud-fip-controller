@@ -34,6 +34,7 @@ func (controller *Controller) leaderElectionConfig() (config leaderelection.Lead
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: controller.onStartedLeading,
 			OnStoppedLeading: controller.onStoppedLeading,
+			OnNewLeader:      controller.onNewLeader,
 		},
 	}
 	return
@@ -60,4 +61,15 @@ func (controller *Controller) onStartedLeading(ctx context.Context) {
 
 func (controller *Controller) onStoppedLeading() {
 	controller.Logger.Info("Stopped leading")
+}
+
+// onNewLeader fires on every participant the first time a leader is observed,
+// whether this instance won the election or is following another leader. At
+// that point the leader election loop is functioning, so the pod is marked
+// ready. Standby pods stay ready as well, so they can take over quickly.
+func (controller *Controller) onNewLeader(identity string) {
+	controller.Logger.Infof("Observed leader: %s", identity)
+	if controller.HealthServer != nil {
+		controller.HealthServer.SetReady(true)
+	}
 }
