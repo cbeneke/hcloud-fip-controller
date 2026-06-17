@@ -8,6 +8,7 @@ on:
     # workflow_dispatch below still allows forcing a manual release.
     paths:
       - '**/*.go'
+      - '!**/*_test.go'
       - 'go.mod'
       - 'go.sum'
       - 'Dockerfile'
