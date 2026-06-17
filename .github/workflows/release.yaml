@@ -26,10 +26,21 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Mint a token from the release GitHub App so the chart-version commit
+      # can bypass the "require pull request" branch ruleset on main. The App
+      # is added to the ruleset bypass list (see repo settings -> rules).
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Determine next version
         id: version
