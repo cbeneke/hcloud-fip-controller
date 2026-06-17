@@ -3,6 +3,15 @@ on:
   push:
     branches:
       - main
+    # Only cut a release when the application code or the Helm chart changes.
+    # Docs, CI workflows and other repo files do not trigger a release.
+    # workflow_dispatch below still allows forcing a manual release.
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
+      - 'deploy/**'
   workflow_dispatch:
     inputs:
       bump:
