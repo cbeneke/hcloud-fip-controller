@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/cbeneke/hcloud-fip-controller/internal/pkg/configuration"
-	"github.com/hetznercloud/hcloud-go/hcloud/schema"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud/schema"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +16,7 @@ import (
 )
 
 func TestUpdateFloatingIPs(t *testing.T) {
-	faultyServer := 2
+	faultyServer := int64(2)
 	tests := []struct {
 		name string
 		serverIPs []schema.FloatingIP
