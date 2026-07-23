@@ -4,8 +4,8 @@ description: Controller to assign Hetzner Cloud Floating IPs to Kubernetes nodes
 type: application
 # version and appVersion are kept in lockstep and bumped automatically by the
 # release pipeline (see .github/workflows/release.yaml).
-version: 0.5.4
-appVersion: "0.5.4"
+version: 0.5.5
+appVersion: "0.5.5"
 home: https://github.com/cbeneke/hcloud-fip-controller
 sources:
   - https://github.com/cbeneke/hcloud-fip-controller
