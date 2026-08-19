@@ -6,7 +6,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	github.com/namsral/flag v1.7.4-pre
 	github.com/prometheus/client_golang v1.24.1
-	github.com/sirupsen/logrus v1.10.0
+	github.com/sirupsen/logrus v1.10.1
 	go.opentelemetry.io/otel v1.45.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.45.0
 	go.opentelemetry.io/otel/sdk v1.45.0
