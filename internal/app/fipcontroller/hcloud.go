@@ -111,7 +111,7 @@ func (controller *Controller) getFloatingIPs(ctx context.Context) ([]*hcloud.Flo
 	var floatingIPs []*hcloud.FloatingIP
 	var err error
 
-	err = retry.OnError(retry.DefaultBackoff, alwaysRetry, func() error {
+	err = retry.OnError(controller.Backoff, alwaysRetry, func() error {
 		floatingIPs, err = controller.HetznerClient.FloatingIP.AllWithOpts(ctx, floatingIPListOpts)
 		return err
 	})
