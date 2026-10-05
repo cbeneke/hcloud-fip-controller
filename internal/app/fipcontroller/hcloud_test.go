@@ -346,3 +346,38 @@ func TestServer(t *testing.T) {
 	}
 }
 
+
+func TestFloatingIPsUsesConfiguredBackoff(t *testing.T) {
+	for _, steps := range []int{1, 2} {
+		testEnv := newTestEnv()
+
+		requests := 0
+		testEnv.Mux.HandleFunc("/floating_ips", func(w http.ResponseWriter, r *http.Request) {
+			requests++
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(schema.ErrorResponse{
+				Error: schema.Error{Code: "invalid_input", Message: "invalid input"},
+			})
+		})
+
+		controller := Controller{
+			HetznerClient: testEnv.Client,
+			Backoff: wait.Backoff{
+				Steps: steps,
+			},
+			Configuration: &configuration.Configuration{
+				FloatingIPLabelSelector: "foo=bar",
+			},
+			Logger: logrus.New(),
+		}
+
+		if _, err := controller.getFloatingIPs(context.Background()); err == nil {
+			t.Fatalf("steps=%d: expected an error from getFloatingIPs", steps)
+		}
+		if requests != steps {
+			t.Errorf("steps=%d: expected %d floating IP list requests, got %d", steps, steps, requests)
+		}
+		testEnv.Server.Close()
+	}
+}
